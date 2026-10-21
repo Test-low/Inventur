@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#205d3d">
+  <meta name="description" content="HolzOptiX Inventur-Helfer – Pakete und Bretterstapel zählen, Ergebnisse sammeln.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="stylesheet" href="./style.css">
+  <title>HolzOptiX – Inventur-Helfer</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">H<span>✕</span></span>
+      <span><strong>HolzOptiX</strong><small>Inventur-Helfer</small></span>
+    </div>
+    <span id="save-status" class="save-status" role="status">Lokal gespeichert</span>
+  </header>
+  <div class="container">
+    <div class="intro">
+      <div>
+        <p class="eyebrow">ZÄHLEN, RECHNEN, NOTIEREN</p>
+        <h1>Inventur leicht gemacht<span class="dot">.</span></h1>
+        <p>Für Pakete, Bunde und große Bretterstapel. Ohne Artikelstamm oder Anmeldung.</p>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Werkzeug auswählen">
+      <button class="tab is-active" type="button" data-tab="package" aria-current="page">▦ <span>Paketrechner</span></button>
+      <button class="tab" type="button" data-tab="stack">▤ <span>Stapelzähler</span></button>
+      <button class="tab" type="button" data-tab="results">☷ <span>Ergebnisliste</span> <span id="result-count" class="pill">0</span></button>
+    </nav>
+
+    <div id="editor" class="editor">
+      <section class="card article-card">
+        <div class="section-head">
+          <div><p class="eyebrow">ARTIKEL</p><h2 id="editor-heading">Neue Zählung</h2></div>
+          <button id="new-item" class="btn subtle" type="button">＋ Neuer Artikel</button>
+        </div>
+        <div class="fields two">
+          <label class="field"><span>Artikelbezeichnung <em>*</em></span><input id="article-name" maxlength="100" type="text" placeholder="z. B. Glattkantbrett Fichte" autocomplete="off"></label>
+          <label class="field"><span>Artikelnummer <small>(optional)</small></span><input id="article-no" maxlength="60" type="text" placeholder="Nummer aus Papierliste" autocomplete="off"></label>
+        </div>
+        <label class="field note-field"><span>Bemerkung <small>(optional)</small></span><input id="article-note" maxlength="160" type="text" placeholder="z. B. Außenlager, Stapel 3" autocomplete="off"></label>
+      </section>
+
+      <section id="panel-package" class="card panel">
+        <div class="section-head">
+          <div><p class="eyebrow">WERKZEUG 01</p><h2>Paket- & Bundrechner</h2><p class="muted">Ganze Pakete und unterschiedliche Paketgrößen gemeinsam zählen.</p></div>
+        </div>
+        <div class="row-label"><span>Anzahl Pakete</span><span>Stück je Paket</span><span></span></div>
+        <div id="package-groups" class="group-list"></div>
+        <button id="add-package" type="button" class="btn dashed full">＋ Weitere Paketgruppe</button>
+        <label class="field single"><span>Lose Bretter / Stück zusätzlich</span><input id="loose-package" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
+      </section>
+
+      <section id="panel-stack" class="card panel" hidden>
+        <div class="section-head">
+          <div><p class="eyebrow">WERKZEUG 02</p><h2>Stapelzähler</h2><p class="muted">Für gleichmäßige und unregelmäßige Stapel. Beide Methoden sind kombinierbar.</p></div>
+        </div>
+        <div class="subhead"><h3>Lagen und Teilblöcke</h3><p>Für einen regelmäßigen Bereich: Bretter je Lage × Anzahl der Lagen.</p></div>
+        <div class="row-label"><span>Bretter je Lage</span><span>Anzahl Lagen</span><span></span></div>
+        <div id="stack-blocks" class="group-list"></div>
+        <button id="add-block" class="btn dashed full" type="button">＋ Weiteren Teilblock hinzufügen</button>
+        <div class="inline-divider"><span>und / oder</span></div>
+        <div class="subhead"><h3>Einzelne, unregelmäßige Reihen</h3><p>Jede Reihe separat zählen. Die eingegebenen Reihen werden addiert.</p></div>
+        <div class="row-add">
+          <label class="field"><span>Bretter in dieser Reihe</span><input id="row-input" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 13"></label>
+          <button id="add-row" class="btn dark" type="button">＋ Reihe</button>
+        </div>
+        <div id="row-chips" class="chips"></div>
+        <label class="field single"><span>Einzelne Bretter zusätzlich</span><input id="loose-stack" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
+      </section>
+
+      <section class="card total-card">
+        <div class="total-label"><span>Aktuelle Zählung</span><span id="total-formula" class="muted">Noch keine Mengen eingetragen</span></div>
+        <div class="big-total"><strong id="preview-total">0</strong><span>Stück</span></div>
+        <details class="conversion">
+          <summary>Optional: Laufmeter und Fläche berechnen</summary>
+          <p>Nur verwenden, wenn alle gezählten Bretter dieses Artikels dieselben Maße haben.</p>
+          <div class="fields two">
+            <label class="field"><span>Länge je Brett (mm)</span><input id="uniform-length" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 4000"></label>
+            <label class="field"><span>Breite je Brett (mm)</span><input id="uniform-width" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 145"></label>
+          </div>
+          <div id="conversion-result" class="conversion-result"></div>
+        </details>
+        <div id="validation-message" class="error-message" role="alert" hidden></div>
+        <button id="save-item" class="btn primary full prominent" type="button">✓ Artikel zur Ergebnisliste hinzufügen</button>
+        <button id="go-results" class="btn subtle full" type="button">Ergebnisliste ansehen →</button>
+      </section>
+    </div>
+
+    <section id="panel-results" class="results-panel" hidden>
+      <div class="card">
+        <div class="section-head">
+          <div><p class="eyebrow">VARIANTE 2</p><h2>Deine Ergebnisliste</h2><p class="muted">Mehrere Artikel nacheinander zählen und die fertigen Mengen gesammelt auf die Papierliste übertragen.</p></div>
+        </div>
+        <div class="result-summary">
+          <div><strong id="summary-articles">0</strong><span>Artikel gezählt</span></div>
+          <div><strong id="summary-counts">0</strong><span>Teilzählungen</span></div>
+        </div>
+        <div id="results-empty" class="empty-state">Noch keine Artikel erfasst. Starte mit dem Paketrechner oder Stapelzähler.</div>
+        <div id="results-list" class="results-list"></div>
+        <div class="result-actions">
+          <button id="result-new" type="button" class="btn primary">＋ Weiteren Artikel zählen</button>
+          <button id="export-csv" type="button" class="btn dark">↓ CSV speichern</button>
+          <button id="print-results" type="button" class="btn subtle">▤ Drucken / PDF</button>
+        </div>
+      </div>
+      <div class="card safety-card">
+        <h3>Datensicherung</h3>
+        <p>Die Zählungen bleiben auf diesem Gerät gespeichert. Sie werden nicht automatisch zwischen Handy und PC übertragen. Sichere sie bei Bedarf als Datei.</p>
+        <div class="result-actions">
+          <button id="export-json" class="btn subtle" type="button">↓ Sicherung speichern</button>
+          <button id="import-json" class="btn subtle" type="button">↑ Sicherung öffnen</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden>
+          <button id="clear-results" class="btn danger" type="button">Liste leeren</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">HolzOptiX · Inventur-Helfer v1.0 · Keine Änderung an eurer Warenwirtschaft</footer>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>

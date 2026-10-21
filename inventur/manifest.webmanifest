@@ -1,0 +1,15 @@
+{
+  "name": "HolzOptiX Inventur-Helfer",
+  "short_name": "Inventur-Helfer",
+  "description": "Pakete und Bretterstapel zählen, mehrere Artikel als Ergebnisliste sammeln.",
+  "lang": "de",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f3",
+  "theme_color": "#205d3d",
+  "icons": [
+    {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
