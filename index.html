@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#205d3d">
-  <meta name="description" content="HolzOptiX Inventur-Helfer – Pakete, Bretterstapel und Fotos zählen, Ergebnisse sammeln.">
+  <meta name="description" content="HolzOptiX Inventur-Helfer – Pakete, Bretterstapel, Fotos und Holzlängen zählen.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="stylesheet" href="./style.css">
@@ -23,12 +23,13 @@
       <div>
         <p class="eyebrow">ZÄHLEN, RECHNEN, NOTIEREN</p>
         <h1>Inventur leicht gemacht<span class="dot">.</span></h1>
-        <p>Für Pakete, Bunde und große Bretterstapel. Ohne Artikelstamm oder Anmeldung.</p>
+        <p>Für Pakete, Bunde, große Bretterstapel und verschiedene Holzlängen. Ohne Anmeldung.</p>
       </div>
     </div>
     <nav class="tabs" aria-label="Werkzeug auswählen">
       <button class="tab is-active" type="button" data-tab="package" aria-current="page">▦ <span>Paketrechner</span></button>
       <button class="tab" type="button" data-tab="stack">▤ <span>Stapelzähler</span></button>
+      <button class="tab" type="button" data-tab="length">↔ <span>Längenzähler</span></button>
       <button class="tab" type="button" data-tab="results">☷ <span>Ergebnisliste</span> <span id="result-count" class="pill">0</span></button>
     </nav>
 
@@ -53,6 +54,25 @@
         <div id="package-groups" class="group-list"></div>
         <button id="add-package" type="button" class="btn dashed full">＋ Weitere Paketgruppe</button>
         <label class="field single"><span>Lose Bretter / Stück zusätzlich</span><input id="loose-package" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
+        <div class="inline-divider"><span>angebrochene Pakete</span></div>
+        <div class="subhead"><h3>Restpakete</h3><p>Rest direkt zählen oder entnommene Stücke vom ursprünglichen Paket abziehen.</p></div>
+        <div class="fields two">
+          <label class="field"><span>Ursprünglich je Paket</span><input id="open-pack-size" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 80"></label>
+          <label class="field"><span>Rechenart</span><select id="open-pack-mode"><option value="remaining">Rest direkt gezählt</option><option value="removed">Entnommene Stücke abziehen</option></select></label>
+        </div>
+        <div class="row-add space-top">
+          <label class="field"><span id="open-pack-amount-label">Noch vorhanden (Stück)</span><input id="open-pack-amount" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 37"></label>
+          <button id="add-open-pack" class="btn dark" type="button">＋ Restpaket</button>
+        </div>
+        <div id="open-pack-list" class="chips"></div>
+        <div class="inline-divider"><span>Standard-Paketgrößen</span></div>
+        <div class="subhead"><h3>Häufige Paketgrößen</h3><p>Einmal speichern und bei weiteren Zählungen wiederverwenden.</p></div>
+        <label class="field"><span>Gespeicherte Größe auswählen</span><select id="preset-select"><option value="">Bitte auswählen</option></select></label>
+        <div class="fields two space-top">
+          <label class="field"><span>Name der Standardgröße</span><input id="preset-name" type="text" maxlength="80" placeholder="z. B. Dachlatte 30 × 50"></label>
+          <label class="field"><span>Stück je Paket</span><input id="preset-size" type="text" inputmode="numeric" placeholder="z. B. 200"></label>
+        </div>
+        <div class="result-actions"><button id="preset-save" class="btn subtle" type="button">＋ Standardgröße speichern</button><button id="preset-delete" class="btn danger" type="button">Ausgewählte löschen</button></div>
       </section>
 
       <section id="panel-stack" class="card panel" hidden>
@@ -71,9 +91,24 @@
         </div>
         <div id="row-chips" class="chips"></div>
         <label class="field single"><span>Einzelne Bretter zusätzlich</span><input id="loose-stack" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
+        <div class="inline-divider"><span>oder zusätzlich per Stapelhöhe</span></div>
+        <div class="subhead"><h3>Stapelhöhen-Rechner <span class="photo-new">NEU 1.3</span></h3><p>Schätzung aus Stapelhöhe, Brettstärke und Brettern je Lage. Paletten und Unterlagen vorher abziehen.</p></div>
+        <div class="fields three">
+          <label class="field"><span>Stapelhöhe (mm)</span><input id="height-total" type="text" inputmode="numeric" placeholder="z. B. 1520"></label>
+          <label class="field"><span>Brettstärke (mm)</span><input id="height-thickness" type="text" inputmode="numeric" placeholder="z. B. 24"></label>
+          <label class="field"><span>Bretter je Lage</span><input id="height-per-layer" type="text" inputmode="numeric" placeholder="z. B. 10"></label>
+        </div>
+        <label class="check-line"><input id="height-with-spacers" type="checkbox"> Stapel hat Zwischenhölzer</label>
+        <div id="height-spacer-fields" class="fields two" hidden>
+          <label class="field"><span>Anzahl der Zwischenhölzer übereinander</span><input id="height-spacers" type="text" inputmode="numeric" placeholder="z. B. 4"></label>
+          <label class="field"><span>Stärke je Zwischenholz (mm)</span><input id="height-spacer-thickness" type="text" inputmode="numeric" placeholder="z. B. 20"></label>
+        </div>
+        <div id="height-preview" class="estimate-preview" role="status">Maße eingeben, um die ungefähre Stückzahl zu berechnen.</div>
+        <button id="add-height-block" class="btn dashed full" type="button">＋ Berechneten Stapel übernehmen</button>
+        <div id="height-block-list" class="chips"></div>
         <div class="inline-divider"><span>oder zusätzlich per Foto</span></div>
         <div class="photo-tool">
-          <div class="subhead"><h3>Foto-Zählhilfe <span class="photo-new">NEU 1.1</span></h3><p>Stirnseite fotografieren und jedes sichtbare Brett antippen. Es wird kein Bild hochgeladen.</p></div>
+          <div class="subhead"><h3>Foto-Zählhilfe <span class="photo-new">FARBGRUPPEN 1.3</span></h3><p>Stirnseite fotografieren, farbige Zählbereiche anlegen und jedes sichtbare Brett antippen. Es wird kein Bild hochgeladen.</p></div>
           <div class="photo-actions">
             <button id="photo-choose" type="button" class="btn dark">▣ Foto aufnehmen / öffnen</button>
             <button id="photo-clear" type="button" class="btn danger">Foto entfernen</button>
@@ -83,6 +118,8 @@
           <div id="photo-stage" class="photo-stage" hidden>
             <canvas id="photo-canvas" aria-label="Bretter durch Antippen markieren"></canvas>
           </div>
+          <div class="photo-zone-heading"><strong>Zählbereiche</strong><button id="photo-zone-add" class="btn subtle" type="button">＋ Bereich</button></div>
+          <div id="photo-zones" class="photo-zones"></div>
           <div class="photo-toolbar">
             <div class="photo-modes" role="group" aria-label="Foto-Werkzeug">
               <button id="photo-mode-add" class="btn subtle is-selected" type="button">＋ Markieren</button>
@@ -98,14 +135,28 @@
             <div><span>Auf dem Foto markiert</span><strong id="photo-mark-count">0</strong><small>Bretter</small></div>
             <button id="photo-undo" class="btn subtle" type="button">↶ Rückgängig</button>
           </div>
+          <button id="photo-download" class="btn subtle full space-top" type="button">↓ Foto mit Markierungen speichern</button>
           <p id="photo-info" class="photo-help" role="status">Tippen setzt einen Punkt. Mit zwei Fingern zoomen, bei Vergrößerung ziehen. Die Fotozählung wird zu anderen Teilzählungen addiert – Bretter nicht doppelt erfassen!</p>
         </div>
+      </section>
+
+      <section id="panel-length" class="card panel" hidden>
+        <div class="section-head"><div><p class="eyebrow">WERKZEUG 03</p><h2>Längen-Sortierzähler</h2><p class="muted">Ein Artikel, mehrere Holzlängen. Jede Länge wird später als eigene Position gespeichert.</p></div></div>
+        <div class="fields two">
+          <label class="field"><span>Breite (mm, optional)</span><input id="length-width" type="text" inputmode="numeric" placeholder="z. B. 145"></label>
+          <label class="field"><span>Stärke (mm, optional)</span><input id="length-thickness" type="text" inputmode="numeric" placeholder="z. B. 28"></label>
+        </div>
+        <p class="muted">Die oben eingegebene Artikelnummer gilt für alle Längen. Bei Angabe von Breite und Stärke wird zusätzlich die Fläche bzw. das Volumen berechnet.</p>
+        <div class="row-label"><span>Länge (mm)</span><span>Stück</span><span></span></div>
+        <div id="length-rows" class="group-list"></div>
+        <button id="add-length" class="btn dashed full" type="button">＋ Weitere Länge</button>
+        <div id="length-summary" class="estimate-preview">Noch keine Längen eingetragen.</div>
       </section>
 
       <section class="card total-card">
         <div class="total-label"><span>Aktuelle Zählung</span><span id="total-formula" class="muted">Noch keine Mengen eingetragen</span></div>
         <div class="big-total"><strong id="preview-total">0</strong><span>Stück</span></div>
-        <details class="conversion">
+        <details id="conversion" class="conversion">
           <summary>Optional: Laufmeter und Fläche berechnen</summary>
           <p>Nur verwenden, wenn alle gezählten Bretter dieses Artikels dieselben Maße haben.</p>
           <div class="fields two">
@@ -126,10 +177,10 @@
           <div><p class="eyebrow">VARIANTE 2</p><h2>Deine Ergebnisliste</h2><p class="muted">Mehrere Artikel nacheinander zählen und die fertigen Mengen gesammelt auf die Papierliste übertragen.</p></div>
         </div>
         <div class="result-summary">
-          <div><strong id="summary-articles">0</strong><span>Artikel gezählt</span></div>
+          <div><strong id="summary-articles">0</strong><span>Positionen gezählt</span></div>
           <div><strong id="summary-counts">0</strong><span>Teilzählungen</span></div>
         </div>
-        <div id="results-empty" class="empty-state">Noch keine Artikel erfasst. Starte mit dem Paketrechner oder Stapelzähler.</div>
+        <div id="results-empty" class="empty-state">Noch keine Positionen erfasst. Starte mit dem Paket-, Stapel- oder Längenzähler.</div>
         <div id="results-list" class="results-list"></div>
         <div class="result-actions">
           <button id="result-new" type="button" class="btn primary">＋ Weiteren Artikel zählen</button>
@@ -149,7 +200,7 @@
       </div>
     </section>
 
-    <footer class="footer">HolzOptiX · Inventur-Helfer v1.2 · Keine Änderung an eurer Warenwirtschaft</footer>
+    <footer class="footer">HolzOptiX · Inventur-Helfer v1.3 · Keine Änderung an eurer Warenwirtschaft</footer>
   </div>
   <script src="./photo.js" defer></script>
   <script src="./app.js" defer></script>

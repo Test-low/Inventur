@@ -1,7 +1,7 @@
 {
   "name": "HolzOptiX Inventur-Helfer",
   "short_name": "Inventur-Helfer",
-  "description": "Pakete und Bretterstapel zählen, Fotos markieren und mehrere Artikel sammeln.",
+  "description": "Pakete, Restbunde, Bretterstapel und Holzlängen zählen, Fotos mit Farbgruppen markieren.",
   "lang": "de",
   "start_url": "./index.html",
   "scope": "./",
