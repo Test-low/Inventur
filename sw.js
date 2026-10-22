@@ -1,7 +1,8 @@
 'use strict';
 // Nur der Ordner /inventur/ wird kontrolliert, keine anderen HolzOptiX-Module.
-const CACHE = 'holzoptix-inventur-v1-3-1-20261022';
-const ASSETS = ['./','./index.html','./app.js?v=1.3.1','./photo.js?v=1.3.1','./style.css?v=1.3.1',
+const CACHE = 'holzoptix-inventur-v1-3-2-20261022';
+// Die App selbst ist in index.html enthalten. Keine gemischten JS-Versionen mehr.
+const ASSETS = ['./','./index.html',
   './manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -1,5 +1,5 @@
 'use strict';
-/* HolzOptiX Inventur 1.1: lokale Foto-Zählhilfe ohne Upload und ohne Bibliotheken. */
+/* HolzOptiX Inventur 1.3.2: lokale Foto-Zählhilfe mit Farbgruppen, ohne Upload. */
 window.HolzOptiXPhoto = (() => {
   const DB_NAME = 'holzoptix-inventur-fotos-v1';
   const STORE = 'photos';
@@ -14,6 +14,48 @@ window.HolzOptiXPhoto = (() => {
   let canvas, ctx;
   const pointers = new Map();
   let pinch = null;
+  const COLORS=['#e75b35','#298ed1','#229c58','#ca8b19','#9959ca','#cb4b89','#167d83','#6e6fce'];
+  const defaultZone=()=>({id:uid(),name:'Bereich 1',color:COLORS[0],locked:false});
+
+  function selectedZone() {
+    const d=getDraft();
+    return (d.photoZones||[]).find(z=>z.id===d.activePhotoZoneId) || d.photoZones?.[0];
+  }
+  function renderZones() {
+    if(!getDraft)return;
+    const d=getDraft(),container=$('photo-zones');container.replaceChildren();
+    (d.photoZones||[]).forEach(z=>{
+      const count=(d.photoMarks||[]).filter(p=>p.zoneId===z.id).length;
+      const row=document.createElement('div');row.className='photo-zone';
+      if(z.id===d.activePhotoZoneId)row.classList.add('active');
+      if(z.locked)row.classList.add('locked');
+      const color=document.createElement('input');color.type='color';color.value=z.color;
+      color.setAttribute('aria-label','Markierungsfarbe für '+z.name);
+      color.addEventListener('input',()=>{z.color=color.value;saveDraft();draw();});
+      const name=document.createElement('input');name.type='text';name.maxLength=50;name.value=z.name;
+      name.setAttribute('aria-label','Name des Zählbereichs');
+      name.addEventListener('change',()=>{z.name=name.value.trim().slice(0,50)||'Zählbereich';saveDraft();renderZones();});
+      const number=document.createElement('span');number.className='zone-count';number.textContent=count+' Stück';
+      const select=document.createElement('button');select.type='button';select.className='btn subtle zone-select';
+      select.textContent=z.id===d.activePhotoZoneId?'✓ Aktiv':'Auswählen';
+      select.addEventListener('click',()=>{d.activePhotoZoneId=z.id;saveDraft();renderZones();draw();});
+      const actions=document.createElement('div');actions.className='zone-actions';
+      const lock=document.createElement('button');lock.type='button';lock.className='btn subtle';
+      lock.textContent=z.locked?'↪ Freigeben':'🔒 Abschließen';
+      lock.addEventListener('click',()=>{z.locked=!z.locked;saveDraft();renderZones();updateCount();draw();});
+      const remove=document.createElement('button');remove.type='button';remove.className='btn danger';
+      remove.textContent='×';remove.title='Zählbereich mit Markierungen entfernen';
+      remove.disabled=d.photoZones.length<=1;
+      remove.addEventListener('click',()=>{
+        if(count&&!confirm('Bereich „'+z.name+'“ und seine '+count+' Markierungen wirklich löschen?'))return;
+        d.photoZones=d.photoZones.filter(x=>x.id!==z.id);
+        d.photoMarks=d.photoMarks.filter(p=>p.zoneId!==z.id);
+        if(d.activePhotoZoneId===z.id)d.activePhotoZoneId=d.photoZones[0].id;
+        history=[];saveDraft();renderZones();updateCount();draw();
+      });
+      actions.append(select,lock,remove);row.append(color,name,number,actions);container.append(row);
+    });
+  }
 
   function openDb() {
     if(!dbPromise) {
@@ -92,6 +134,8 @@ window.HolzOptiXPhoto = (() => {
     $('photo-mark-count').textContent=String(d.photoMarks?.length || 0);
     $('photo-undo').disabled=history.length===0;
     $('photo-clear').disabled=!d.photoId && !(d.photoMarks?.length);
+    $('photo-download').disabled=!image;
+    renderZones();
     onChange();
   }
   function frame() {
@@ -123,15 +167,17 @@ window.HolzOptiXPhoto = (() => {
     ctx.fillStyle='#e8eee8';ctx.fillRect(0,0,width,height);
     const f=frame();if(!f)return;
     ctx.drawImage(image,f.x,f.y,f.drawW,f.drawH);
-    (getDraft().photoMarks||[]).forEach((p,i)=>{
+    const zones=new Map((getDraft().photoZones||[]).map(z=>[z.id,z]));
+    const indexes=new Map();
+    (getDraft().photoMarks||[]).forEach(p=>{
+      const zone=zones.get(p.zoneId),number=(indexes.get(p.zoneId)||0)+1;
+      indexes.set(p.zoneId,number);
       const x=f.x+p.x*f.drawW,y=f.y+p.y*f.drawH;
       if(x < -18 || x > width+18 || y < -18 || y > height+18)return;
-      ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fillStyle='#f69b31';ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle=zone?.color||COLORS[0];ctx.fill();
       ctx.lineWidth=2.5;ctx.strokeStyle='#ffffff';ctx.stroke();
-      if(i<999){
-        ctx.fillStyle='#302618';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(String(i+1),x,y);
-      }
+      ctx.fillStyle='#fff';ctx.font='bold '+(number<100?'10':number<1000?'8':'7')+'px Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(number),x,y);
     });
   }
   function releaseImage() {
@@ -139,6 +185,7 @@ window.HolzOptiXPhoto = (() => {
     image=null;imageUrl=null;imageId=null;
   }
   async function renderCurrent() {
+    renderZones();
     updateCount();
     const wanted=getDraft().photoId || null;
     if(wanted && wanted===imageId && image){draw();return;}
@@ -160,7 +207,7 @@ window.HolzOptiXPhoto = (() => {
       if(token!==loadToken){URL.revokeObjectURL(decoded.url);return;}
       image=decoded.img;imageUrl=decoded.url;imageId=wanted;
       $('photo-stage').hidden=false;$('photo-placeholder').hidden=true;
-      requestAnimationFrame(draw);
+      updateCount();requestAnimationFrame(draw);
     }catch(err){if(token===loadToken)$('photo-placeholder').textContent=err.message;}
   }
   function setMode(next) {
@@ -180,9 +227,12 @@ window.HolzOptiXPhoto = (() => {
   function tap(x,y) {
     const f=frame();if(!f)return;
     const d=getDraft(),marks=d.photoMarks || (d.photoMarks=[]);
+    const zone=selectedZone();
+    if(!zone||zone.locked){$('photo-info').textContent='Dieser Bereich ist abgeschlossen. Erst wieder freigeben, um Markierungen zu ändern.';return;}
     if(mode==='remove'){
       let index=-1,min=25*25;
       marks.forEach((p,i)=>{
+        if(p.zoneId!==zone.id)return;
         const dx=f.x+p.x*f.drawW-x,dy=f.y+p.y*f.drawH-y,dist=dx*dx+dy*dy;
         if(dist<min){index=i;min=dist;}
       });
@@ -195,14 +245,18 @@ window.HolzOptiXPhoto = (() => {
       if(marks.length>=10000){alert('Maximal 10.000 Markierungen pro Foto.');return;}
       const near=marks.some(p=>Math.hypot((p.x-nx)*f.drawW,(p.y-ny)*f.drawH)<9);
       if(near)return;
-      const point={x:Math.round(nx*100000)/100000,y:Math.round(ny*100000)/100000};
+      const point={x:Math.round(nx*100000)/100000,y:Math.round(ny*100000)/100000,zoneId:zone.id};
       marks.push(point);history.push({mode:'add',index:marks.length-1,point});
     }
     if(history.length>200)history.shift();
     saveDraft();updateCount();draw();
   }
   function undo() {
-    const last=history.pop();if(!last)return;
+    const last=history[history.length-1];if(!last)return;
+    if(getDraft().photoZones?.find(z=>z.id===last.point.zoneId)?.locked){
+      $('photo-info').textContent='Zum Rückgängigmachen bitte den abgeschlossenen Bereich erst freigeben.';return;
+    }
+    history.pop();
     const marks=getDraft().photoMarks;
     if(last.mode==='add')marks.splice(last.index,1);
     else marks.splice(last.index,0,last.point);
@@ -252,7 +306,8 @@ window.HolzOptiXPhoto = (() => {
   async function choosePhoto(file) {
     if(!file)return;
     const draft=getDraft();
-    if((draft.photoId || (draft.photoMarks?.length||0)>0) &&
+    const replacing=Boolean(draft.photoId || (draft.photoMarks?.length||0)>0);
+    if(replacing &&
        !confirm('Neues Foto wählen? Das bisherige Foto und alle Markierungen dieser Fotozählung werden ersetzt.'))return;
     const oldId=draft.photoId;
     $('photo-info').textContent='Foto wird vorbereitet und lokal gespeichert …';
@@ -261,12 +316,51 @@ window.HolzOptiXPhoto = (() => {
       const id=uid();
       await putBlob(id,blob);
       draft.photoId=id;draft.photoMarks=[];
+      if(replacing){draft.photoZones=[defaultZone()];draft.activePhotoZoneId=draft.photoZones[0].id;}
       saveDraft();await renderCurrent();
       $('photo-info').textContent='Foto lokal gespeichert. Tippen markiert ein Brett. Mit zwei Fingern zoomen und bei Vergrößerung verschieben.';
       return oldId;
     }catch(err){alert('Foto konnte nicht übernommen werden: '+err.message);}
     finally{$('photo-file').value='';}
     return null;
+  }
+  async function downloadMarkedPhoto() {
+    if(!image)return alert('Bitte zuerst ein Foto öffnen.');
+    try{
+      const d=getDraft(),zones=d.photoZones||[],marks=d.photoMarks||[];
+      const w=image.naturalWidth,h=image.naturalHeight;
+      const font=Math.max(16,Math.round(w/75)),line=Math.round(font*1.6);
+      const pad=Math.round(font*1.2),footer=Math.round(line*(zones.length+2)+pad*2);
+      const target=document.createElement('canvas');target.width=w;target.height=h+footer;
+      const c=target.getContext('2d');if(!c)throw Error('Bildexport nicht verfügbar.');
+      c.fillStyle='#fff';c.fillRect(0,0,w,h+footer);c.drawImage(image,0,0,w,h);
+      const zoneMap=new Map(zones.map(z=>[z.id,z]));const numbers=new Map();
+      const radius=Math.max(12,Math.round(w/125));
+      marks.forEach(p=>{
+        const z=zoneMap.get(p.zoneId),n=(numbers.get(p.zoneId)||0)+1;
+        numbers.set(p.zoneId,n);
+        const x=p.x*w,y=p.y*h;
+        c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.fillStyle=z?.color||COLORS[0];c.fill();
+        c.lineWidth=Math.max(2,radius/5);c.strokeStyle='white';c.stroke();
+        c.fillStyle='#fff';c.font='bold '+Math.max(9,Math.round(radius*.86))+'px Arial';
+        c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),x,y);
+      });
+      c.fillStyle='#173f30';c.fillRect(0,h,w,footer);
+      c.textAlign='left';c.textBaseline='top';c.fillStyle='#fff';c.font='bold '+font+'px Arial';
+      c.fillText('Fotozählung · '+marks.length+' Stück',pad,h+pad);
+      zones.forEach((z,i)=>{
+        const y=h+pad+line*(i+1);
+        c.fillStyle=z.color;c.fillRect(pad,y+2,font,font);
+        c.fillStyle='#fff';c.font=Math.round(font*.9)+'px Arial';
+        const count=marks.filter(p=>p.zoneId===z.id).length;
+        c.fillText(z.name+' · '+count+' Stück',pad+font*1.5,y);
+      });
+      const blob=await new Promise((resolve,reject)=>target.toBlob(b=>b?resolve(b):reject(Error('Foto konnte nicht exportiert werden.')),'image/jpeg',.92));
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      const name=String(d.name||'Inventur').replace(/[^a-zA-Z0-9äöüÄÖÜß_-]+/g,'_').slice(0,50);
+      a.href=url;a.download='HolzOptiX_Fotozaehlung_'+name+'.jpg';document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),30000);
+    }catch(err){alert('Kontrollbild konnte nicht gespeichert werden: '+err.message);}
   }
   async function blobToDataUrl(blob) {
     return new Promise((resolve,reject)=>{
@@ -314,8 +408,16 @@ window.HolzOptiXPhoto = (() => {
   function init(options) {
     getDraft=options.getDraft;saveDraft=options.persist;onChange=options.onCountChange;
     canvas=$('photo-canvas');ctx=canvas.getContext('2d');
-    if(!ctx){$('photo-info').textContent='Fotozählung wird von diesem Browser nicht unterstützt.';return;}
+    if(!ctx){$('photo-info').textContent='Fotozählung wird von diesem Browser nicht unterstützt.';return false;}
     wirePointerEvents();
+    $('photo-zone-add').addEventListener('click',()=>{
+      const d=getDraft();
+      if(d.photoZones.length>=50)return alert('Maximal 50 Zählbereiche pro Foto.');
+      const index=d.photoZones.length;
+      const zone={id:uid(),name:'Bereich '+(index+1),color:COLORS[index%COLORS.length],locked:false};
+      d.photoZones.push(zone);d.activePhotoZoneId=zone.id;
+      saveDraft();renderZones();draw();
+    });
     $('photo-choose').addEventListener('click',()=>$('photo-file').click());
     $('photo-file').addEventListener('change',async e=>{
       const oldId=await choosePhoto(e.target.files[0]);
@@ -326,7 +428,8 @@ window.HolzOptiXPhoto = (() => {
       if(!d.photoId && !(d.photoMarks?.length))return;
       if(!confirm('Foto und alle Markierungen dieser Zählung entfernen?'))return;
       const oldId=d.photoId;
-      d.photoId=null;d.photoMarks=[];saveDraft();renderCurrent();options.cleanupPhoto(oldId);
+      d.photoId=null;d.photoMarks=[];d.photoZones=[defaultZone()];d.activePhotoZoneId=d.photoZones[0].id;
+      saveDraft();renderCurrent();options.cleanupPhoto(oldId);
     });
     $('photo-mode-add').addEventListener('click',()=>setMode('add'));
     $('photo-mode-remove').addEventListener('click',()=>setMode('remove'));
@@ -334,9 +437,11 @@ window.HolzOptiXPhoto = (() => {
     $('photo-zoom-out').addEventListener('click',()=>setZoom(zoom/1.5));
     $('photo-zoom-reset').addEventListener('click',()=>{panX=0;panY=0;setZoom(1);});
     $('photo-undo').addEventListener('click',undo);
+    $('photo-download').addEventListener('click',downloadMarkedPhoto);
     if('ResizeObserver' in window)new ResizeObserver(draw).observe($('photo-stage'));
     window.addEventListener('resize',draw);
     setMode('add');updateCount();
+    return true;
   }
-  return {init,renderCurrent,draw,removeStored,exportImages,importImages};
+  return {version:'1.3.2',init,renderCurrent,draw,removeStored,exportImages,importImages};
 })();

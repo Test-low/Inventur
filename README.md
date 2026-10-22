@@ -1,4 +1,4 @@
-# HolzOptiX Inventur-Helfer 1.3.1
+# HolzOptiX Inventur-Helfer 1.3.2
 
 Drei einfache Zählhilfen für die Papierinventur in einer Holzhandlung.
 Keine Warenwirtschaftsanbindung, kein Login, keine externen Bibliotheken.
@@ -21,7 +21,7 @@ Den Ordner entpacken und `index.html` im Browser öffnen. Dafür ist keine Insta
 
 ## Für Smartphone und Tablet bereitstellen
 
-Die Dateien **aus** dem Ordner `inventur` in das bestehende GitHub-Pages-Repository für die Inventur hochladen und die bisherigen Dateien ersetzen. Die Adresse bleibt unverändert.
+**Wichtige Änderung in v1.3.2:** Die komplette Oberfläche samt Berechnungen, Fotozähler und Speicherfunktionen steckt jetzt in **einer** `index.html`. Damit können nicht mehr versehentlich neue HTML-Schaltflächen mit altem JavaScript vermischt werden. Für die Reparatur auf GitHub Pages genügt es, die `index.html` im Wurzelverzeichnis des bestehenden Inventur-Repositories zu ersetzen. Die anderen Dateien im ZIP (`sw.js`, Icons, Manifest) dürfen ebenfalls aktualisiert werden; die noch enthaltenen Dateien `app.js`, `photo.js` und `style.css` sind Quellkopien und werden von `index.html` **nicht mehr nachgeladen**.
 
 Eure bestehende Adresse:
 
@@ -31,9 +31,9 @@ Den Link einmal im Browser mit Internet öffnen; danach kann die App bei erfolgr
 
 **Wichtig:** Browserdaten können gelöscht werden. Deshalb regelmäßig unter „Ergebnisliste → Sicherung speichern“ eine JSON-Datei herunterladen. Die JSON-Sicherung lässt sich in eine andere Installation importieren. Die CSV dient zur Übertragung auf eure Papier- oder Excel-Liste.
 
-**Vor dem Update:** In der bisherigen Version einmal eine JSON-Sicherung erstellen. Version 1.3.1 verwendet weiterhin denselben lokalen Datenspeicher und übernimmt frühere Zählungen sowie Markierungen. Die Daten werden nicht automatisch zwischen verschiedenen Handys übertragen.
+**Vor dem Update:** In der bisherigen Version möglichst einmal eine JSON-Sicherung erstellen. Version 1.3.2 verwendet weiterhin denselben lokalen Datenspeicher und übernimmt frühere Zählungen sowie Markierungen. Die Daten werden nicht automatisch zwischen verschiedenen Handys übertragen.
 
-**Wichtig beim Hochladen von 1.3.1:** Unbedingt **alle Dateien**, besonders `app.js`, `photo.js`, `index.html`, `style.css` und `sw.js`, aus diesem ZIP ersetzen. Wenn nur die Webseite (`index.html`) ausgetauscht wird, fehlen die neuen Berechnungen. Die Programmdateien tragen nun eine neue Versionskennung in ihren Ladeadressen, damit ein altes Offline-Zwischenspeicherpaket sie nicht versehentlich ersetzt. Nach dem Upload auf dem Handy gegebenenfalls zweimal neu laden. **Nicht die Website-Daten löschen**, sonst würden lokale Zählungen verloren gehen.
+**Wichtig beim Hochladen von 1.3.2:** `index.html` ist die einzige zwingend nötige Datei. Im GitHub-Repository muss sie tatsächlich den alten Inhalt ersetzen, nicht als `index (1).html` oder in einem Unterordner landen. Nach erfolgreichem Upload auf dem Handy die Seite mit Internet neu laden. **Nicht die Website-Daten löschen**, sonst würden lokale Zählungen verloren gehen. Im Seitenfuß muss „v1.3.2“ stehen.
 
 ## Foto-Zählhilfe
 
@@ -62,4 +62,4 @@ Dies ist ein **eigenständiges Web-Modul**, kein Austausch der vorhandenen Windo
 - 1.520 mm Stapelhöhe − 4 × 20 mm Zwischenholz = 1.440 mm; geteilt durch 24 mm × 10 je Lage = geschätzt 600 Stück
 - 42 × 3 m + 31 × 4 m + 18 × 5 m = 91 Stück und 340 lfm
 
-Version: 1.3.1 · 22.10.2026
+Version: 1.3.2 · 22.10.2026

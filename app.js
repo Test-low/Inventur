@@ -1,18 +1,64 @@
 'use strict';
 (() => {
+  if (typeof window !== 'undefined') window.HolzOptiXAppVersion = '1.3.2';
+  // Auf Touch-Geräten nur den Seitenzoom sperren. Der Foto-Canvas besitzt
+  // eigene Pointer-Gesten zum Vergrößern und Verschieben des Bildes.
+  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+    // iOS Safari verwendet zusätzlich eigene, nicht standardisierte Gesten.
+    for (const eventName of ['gesturestart', 'gesturechange']) {
+      document.addEventListener(eventName, event => event.preventDefault(), {passive:false});
+    }
+  }
   const STORAGE_KEY = 'holzoptix:inventur-helfer:v1';
   const LIMIT = 100000000;
   const $ = (id) => document.getElementById(id);
   const fmt = (n, places = 0) => new Intl.NumberFormat('de-DE', {maximumFractionDigits:places}).format(n);
   const uid = () => (globalThis.crypto?.randomUUID?.() || String(Date.now()) + '-' + Math.random().toString(36).slice(2));
+  const newZone = (index=0) => ({id:uid(),name:'Bereich '+(index+1),color:['#e75b35','#298ed1','#229c58','#ca8b19','#9959ca','#cb4b89','#167d83','#6e6fce'][index%8],locked:false});
   const emptyDraft = (type = 'package') => ({
-    type, editingId: null, name: '', articleNo: '', note: '', length: '', width: '',
-    packages: [{id:uid(), packs:'', perPack:''}], loosePackage: '',
+    type, editingId: null, editingGroupId:null, name: '', articleNo: '', note: '', length: '', width: '',thickness:'',
+    packages: [{id:uid(), packs:'', perPack:''}], loosePackage: '', openPacks:[],
+    openPackDraft:{perPack:'',mode:'remaining',amount:''},
     blocks: [{id:uid(), perLayer:'', layers:''}], rows: [], rowInput:'', looseStack:'',
-    photoId:null,photoMarks:[]
+    heightDraft:{height:'',thickness:'',perLayer:'',withSpacers:false,spacers:'',spacerThickness:''},heightBlocks:[],
+    photoId:null,photoMarks:[],photoZones:[newZone()],activePhotoZoneId:null,
+    lengthRows:[{id:uid(),length:'',count:''}]
   });
-  let state = {version:1, items:[], draft:emptyDraft()};
+  let state = {version:1, items:[], draft:emptyDraft(),presets:[]};
   let activeTab = 'package';
+  let photoReady = false;
+  let storageReadError = false;
+
+  function normalizePhoto(d) {
+    const input=Array.isArray(d.photoZones)?d.photoZones:[];
+    const zones=[],seen=new Set();
+    input.slice(0,50).forEach((z,i)=>{
+      if(!z||typeof z!=='object')return;
+      const id=typeof z.id==='string'&&z.id.length<=100&&!seen.has(z.id)?z.id:uid();
+      seen.add(id);
+      zones.push({id,name:String(z.name||'Bereich '+(i+1)).slice(0,50),
+        color:typeof z.color==='string'&&/^#[0-9a-fA-F]{6}$/.test(z.color)?z.color:newZone(i).color,locked:z.locked===true});
+    });
+    d.photoZones=zones.length?zones:[newZone()];
+    const ids=new Set(d.photoZones.map(z=>z.id));
+    d.activePhotoZoneId=ids.has(d.activePhotoZoneId)?d.activePhotoZoneId:d.photoZones[0].id;
+    d.photoMarks=Array.isArray(d.photoMarks)?d.photoMarks.map(p=>({...p,zoneId:ids.has(p?.zoneId)?p.zoneId:d.photoZones[0].id})):[];
+  }
+  function normalizeDraft(d) {
+    if(!d||typeof d!=='object'||Array.isArray(d)||!['package','stack','length'].includes(d.type))return emptyDraft();
+    const blank=emptyDraft(d.type);
+    for(const [key,value] of Object.entries(blank))if(d[key]===undefined||d[key]===null)d[key]=value;
+    if(!Array.isArray(d.packages)||!Array.isArray(d.blocks)||!Array.isArray(d.rows))return emptyDraft();
+    if(!Array.isArray(d.openPacks))d.openPacks=[];
+    if(!Array.isArray(d.heightBlocks))d.heightBlocks=[];
+    if(!Array.isArray(d.lengthRows))d.lengthRows=blank.lengthRows;
+    if(!d.openPackDraft||typeof d.openPackDraft!=='object')d.openPackDraft=blank.openPackDraft;
+    if(!d.heightDraft||typeof d.heightDraft!=='object')d.heightDraft=blank.heightDraft;
+    normalizePhoto(d);
+    return d;
+  }
 
   function storageMessage(message, error = false) {
     const target = $('save-status');
@@ -20,6 +66,10 @@
     target.classList.toggle('error', error);
   }
   function persist() {
+    if (storageReadError) {
+      storageMessage('Alte Zählungen geschützt – Daten konnten nicht gelesen werden', true);
+      return false;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       storageMessage('Lokal gespeichert');
@@ -53,6 +103,40 @@
     if (!Number.isSafeInteger(x) || x > LIMIT) throw Error('Die Gesamtmenge ist zu groß.');
     return x;
   }
+  function positive(value, field) {
+    const n=quantity(value,field);
+    if(n<=0)throw Error(field+': bitte eine Zahl größer als 0 eingeben.');
+    return n;
+  }
+  function openPackCount(g) {
+    const size=positive(g.perPack,'Ursprüngliche Paketgröße');
+    const amount=quantity(g.amount,'Rest-/Entnahmemenge');
+    if(amount>size)throw Error('Restmenge oder Entnahme darf nicht größer als das Paket sein.');
+    if(!['remaining','removed'].includes(g.mode))throw Error('Ungültige Restpaket-Rechenart.');
+    return g.mode==='remaining'?amount:size-amount;
+  }
+  function heightCalculation(h) {
+    const height=positive(h.height,'Stapelhöhe'),thickness=positive(h.thickness,'Brettstärke');
+    const perLayer=positive(h.perLayer,'Bretter pro Lage');
+    const withSpacers=h.withSpacers===true || (h.withSpacers===undefined && Number(h.spacers)>0);
+    const spacers=withSpacers?quantity(h.spacers,'Anzahl Zwischenhölzer'):0;
+    const spacerThickness=withSpacers?positive(h.spacerThickness,'Zwischenholzstärke'):0;
+    const net=height-spacers*spacerThickness;
+    if(net<=0)throw Error('Die Zwischenhölzer sind höher als der eigentliche Stapel.');
+    const layers=Math.floor(net/thickness);
+    if(layers<=0)throw Error('Die verbleibende Höhe reicht nicht für eine volle Lage.');
+    return {height,thickness,perLayer,withSpacers,spacers,spacerThickness,layers,
+      remainder:net-layers*thickness,count:mul(layers,perLayer)};
+  }
+  function lengthRows(d) {
+    if(!Array.isArray(d.lengthRows)||d.lengthRows.length>1000)throw Error('Zu viele Holzlängen.');
+    const seen=new Set();
+    return d.lengthRows.filter(r=>String(r.length??'').trim()!==''||String(r.count??'').trim()!=='').map(r=>{
+      const length=positive(r.length,'Holzlänge (mm)'),count=quantity(r.count,'Stückzahl zur Länge');
+      if(seen.has(length))throw Error('Länge '+fmt(length)+' mm kommt mehrfach vor. Bitte Stückzahlen zusammenfassen.');
+      seen.add(length);return {length,count};
+    });
+  }
   function calculate(d, strict = false) {
     let total = 0, parts = 0;
     const breakdown = [];
@@ -69,6 +153,12 @@
       });
       const loose = quantity(d.loosePackage, 'Lose Stücke', true);
       if (loose !== null) {total = add(total, loose);parts++;breakdown.push(loose + ' lose');}
+      (d.openPacks||[]).forEach(g=>{
+        const n=openPackCount(g);total=add(total,n);parts++;
+        breakdown.push('Restpaket '+g.perPack+': '+n+' übrig');
+      });
+      if(strict && String(d.openPackDraft?.amount??'').trim()!=='')
+        throw Error('Restpaket bitte zuerst mit „+ Restpaket“ übernehmen.');
     } else if (d.type === 'stack') {
       d.blocks.forEach((g, i) => {
         const a = quantity(g.perLayer, 'Bretter/Lage ' + (i+1), true);
@@ -86,18 +176,36 @@
       if (d.rows.length) breakdown.push(d.rows.length + ' Einzelreihen: ' + d.rows.join(' + '));
       const loose = quantity(d.looseStack, 'Einzelne Bretter', true);
       if (loose !== null) {total = add(total, loose);parts++;breakdown.push(loose + ' einzelne');}
+      (d.heightBlocks||[]).forEach(h=>{
+        const result=heightCalculation(h);total=add(total,result.count);parts++;
+        breakdown.push('Höhenschätzung: '+result.layers+' Lagen × '+result.perLayer+' = '+result.count);
+      });
       const marks=d.photoMarks || [];
       if(!Array.isArray(marks)||marks.length>10000 || marks.some(p => !p || !Number.isFinite(p.x) ||
         !Number.isFinite(p.y) || p.x<0 || p.x>1 || p.y<0 || p.y>1)) throw Error('Ungültige Foto-Markierungen.');
+      if(marks.some(p=>p.zoneId!==undefined&&!d.photoZones?.some(z=>z.id===p.zoneId)))throw Error('Ungültiger Foto-Zählbereich.');
       if(marks.length){total=add(total,marks.length);parts++;breakdown.push('Foto: '+marks.length+' markiert');}
       if (strict && String(d.rowInput ?? '').trim() !== '') throw Error('Die letzte Einzelreihe bitte mit „+ Reihe“ übernehmen.');
+      if(strict && ['height','thickness','perLayer'].some(k=>String(d.heightDraft?.[k]??'').trim()!==''))
+        throw Error('Höhenrechner bitte zuerst mit „Berechneten Stapel übernehmen“ abschließen oder Eingaben entfernen.');
+    } else if (d.type === 'length') {
+      const rows=lengthRows(d);
+      rows.forEach(r=>{total=add(total,r.count);parts++;});
+      if(strict&&!rows.length)throw Error('Bitte mindestens eine Länge mit Stückzahl eingeben.');
+      const width=measure(d.width,'Breite'),thickness=measure(d.thickness,'Stärke');
+      const lfm=rows.reduce((n,r)=>n+r.length*r.count/1000,0);
+      const area=width===null?null:lfm*width/1000;
+      const volume=width===null||thickness===null?null:area*thickness/1000;
+      return {total,parts,breakdown:rows.map(r=>fmt(r.length)+' mm: '+r.count+' St.').join(' · '),
+        length:null,width,thickness,lfm,area,volume};
     } else throw Error('Unbekannter Zählmodus.');
     if (strict && parts === 0) throw Error('Bitte mindestens eine Menge eingeben.');
     const length = measure(d.length, 'Länge');
     const width = measure(d.width, 'Breite');
     const lfm = length === null ? null : total * length / 1000;
     const area = length === null || width === null ? null : total * length * width / 1000000;
-    return {total, parts, breakdown:breakdown.join(' · '), length, width, lfm, area};
+    return {total, parts, breakdown:breakdown.join(' · '), length, width, lfm, area,
+      thickness:null,volume:null};
   }
   function fromItem(item) {
     const d = emptyDraft(item.type);
@@ -108,14 +216,18 @@
     if (item.type === 'package') {
       d.packages = item.packages.map(g => ({id:uid(), packs:String(g.packs),perPack:String(g.perPack)}));
       d.loosePackage = item.loose == null ? '' : String(item.loose);
+      d.openPacks=(item.openPacks||[]).map(g=>({id:uid(),perPack:String(g.perPack),mode:g.mode,amount:String(g.amount)}));
       if (!d.packages.length) d.packages = [{id:uid(),packs:'',perPack:''}];
-    } else {
+    } else if(item.type==='stack') {
       d.blocks = item.blocks.map(g => ({id:uid(),perLayer:String(g.perLayer),layers:String(g.layers)}));
       d.rows = item.rows.map(Number);
       d.looseStack = item.loose == null ? '' : String(item.loose);
+      d.heightBlocks=(item.heightBlocks||[]).map(h=>({...h,id:uid()}));
       if (!d.blocks.length) d.blocks = [{id:uid(),perLayer:'',layers:''}];
       d.photoId=typeof item.photoId==='string' ? item.photoId : null;
-      d.photoMarks=Array.isArray(item.photoMarks) ? item.photoMarks.map(p=>({x:p.x,y:p.y})) : [];
+      d.photoMarks=Array.isArray(item.photoMarks) ? item.photoMarks.map(p=>({x:p.x,y:p.y,zoneId:p.zoneId})) : [];
+      d.photoZones=Array.isArray(item.photoZones) ? item.photoZones.map(z=>({...z})) : [];
+      normalizePhoto(d);
     }
     return d;
   }
@@ -123,48 +235,105 @@
     const name = String(d.name || '').trim();
     if (!name) throw Error('Bitte eine Artikelbezeichnung eingeben.');
     if (name.length > 100 || String(d.articleNo).length > 60 || String(d.note).length > 160) throw Error('Text ist zu lang.');
+    normalizePhoto(d);
     const v = calculate(d, true);
     const item = {
       id, type:d.type, name, articleNo:String(d.articleNo || '').trim(),note:String(d.note || '').trim(),
       length:v.length,width:v.width,total:v.total,parts:v.parts,breakdown:v.breakdown,
       lfm:v.lfm,area:v.area,createdAt,updatedAt:new Date().toISOString(),
-      packages:[],blocks:[],rows:[],loose:null,photoId:null,photoMarks:[]
+      packages:[],openPacks:[],blocks:[],heightBlocks:[],rows:[],loose:null,
+      photoId:null,photoMarks:[],photoZones:[]
     };
     if (d.type === 'package') {
       item.packages = d.packages.filter(g => String(g.packs).trim() !== '' || String(g.perPack).trim() !== '')
         .map(g => ({packs:quantity(g.packs,'Pakete'),perPack:quantity(g.perPack,'Stück je Paket')}));
       item.loose = quantity(d.loosePackage,'Lose Stücke',true);
+      item.openPacks=(d.openPacks||[]).map(g=>({perPack:positive(g.perPack,'Paketgröße'),mode:g.mode,
+        amount:quantity(g.amount,'Rest-/Entnahmemenge')}));
     } else {
       item.blocks = d.blocks.filter(g => String(g.perLayer).trim() !== '' || String(g.layers).trim() !== '')
         .map(g => ({perLayer:quantity(g.perLayer,'Bretter je Lage'),layers:quantity(g.layers,'Anzahl Lagen')}));
       item.rows = d.rows.slice();
       item.loose = quantity(d.looseStack,'Einzelne Bretter',true);
+      item.heightBlocks=(d.heightBlocks||[]).map(h=>{
+        const c=heightCalculation(h);
+        return {height:c.height,thickness:c.thickness,perLayer:c.perLayer,
+          withSpacers:c.withSpacers,spacers:c.spacers,spacerThickness:c.spacerThickness};
+      });
       item.photoId=typeof d.photoId==='string' ? d.photoId : null;
-      item.photoMarks=(d.photoMarks||[]).map(p=>({x:p.x,y:p.y}));
+      item.photoMarks=(d.photoMarks||[]).map(p=>({x:p.x,y:p.y,zoneId:p.zoneId||d.photoZones[0].id}));
+      item.photoZones=d.photoZones.map(z=>({...z}));
     }
     return item;
   }
+  function createLengthEntry(d,row,options={}) {
+    const name=String(d.name||'').trim();
+    if(!name || name.length>100)throw Error('Bitte eine gültige Artikelbezeichnung eingeben.');
+    const articleNo=String(d.articleNo||'').trim(),note=String(d.note||'').trim();
+    if(articleNo.length>60||note.length>160)throw Error('Artikelnummer oder Bemerkung ist zu lang.');
+    const length=positive(row.length,'Holzlänge (mm)'),total=quantity(row.count,'Stückzahl');
+    const width=measure(d.width,'Breite'),thickness=measure(d.thickness,'Stärke');
+    const lfm=total*length/1000;
+    const area=width===null?null:lfm*width/1000;
+    const volume=area===null||thickness===null?null:area*thickness/1000;
+    return {id:options.id||uid(),groupId:options.groupId||uid(),type:'length',name,articleNo,note,
+      length,width,thickness,total,parts:1,lfm,area,volume,
+      breakdown:fmt(length)+' mm: '+total+' Stück',
+      createdAt:options.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),
+      packages:[],openPacks:[],blocks:[],heightBlocks:[],rows:[],loose:null,photoId:null,photoMarks:[],photoZones:[]};
+  }
+  function fromLengthGroup(items) {
+    const first=items[0],d=emptyDraft('length');
+    d.editingGroupId=first.groupId||first.id;
+    d.name=first.name;d.articleNo=first.articleNo;d.note=first.note;
+    d.width=first.width==null?'':String(first.width);
+    d.thickness=first.thickness==null?'':String(first.thickness);
+    d.lengthRows=items.map(x=>({id:uid(),length:String(x.length),count:String(x.total)}));
+    return d;
+  }
   function validImportedItem(item) {
-    if (!item || typeof item !== 'object' || !['package','stack'].includes(item.type)) throw Error('Ungültiger Artikel.');
-    if ((item.packages?.length || 0) > 1000 || (item.blocks?.length || 0) > 1000 || (item.rows?.length || 0) > 10000) throw Error('Zu viele Zählgruppen.');
+    if(!item||typeof item!=='object')throw Error('Ungültiger Artikel.');
+    if(item.type==='length'){
+      const rebuilt=createLengthEntry(item,{length:item.length,count:item.total},
+        {groupId:typeof item.groupId==='string'&&item.groupId?item.groupId:uid()});
+      return rebuilt;
+    }
+    if(!['package','stack'].includes(item.type))throw Error('Ungültiger Artikeltyp.');
+    if ((item.packages?.length || 0) > 1000 || (item.openPacks?.length||0)>1000 ||
+        (item.blocks?.length || 0) > 1000 || (item.heightBlocks?.length||0)>1000 ||
+        (item.rows?.length || 0) > 10000 || (item.photoZones?.length||0)>50) throw Error('Zu viele Zählgruppen.');
     const d = fromItem(item);
     const rebuilt = createEntry(d);
     return rebuilt;
   }
+  function validatePresets(input) {
+    if(!Array.isArray(input)||input.length>1000)throw Error('Ungültige Standard-Paketgrößen.');
+    const seen=new Set();
+    return input.map(p=>{
+      const name=String(p?.name||'').trim();
+      if(!name||name.length>80)throw Error('Ungültiger Name einer Standard-Paketgröße.');
+      const size=positive(p.size,'Standard-Paketgröße');
+      if(seen.has(name.toLowerCase()))throw Error('Doppelte Standard-Paketgröße.');
+      seen.add(name.toLowerCase());
+      return {id:typeof p.id==='string'&&p.id.length<=100?p.id:uid(),name,size};
+    });
+  }
   function load() {
     try {
       const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if(raw && (raw.version!==1 || !Array.isArray(raw.items) || raw.items.length>5000))
+        throw Error('Unbekanntes oder zu großes Inventur-Speicherformat.');
       if (raw?.version === 1 && Array.isArray(raw.items) && raw.items.length <= 5000) {
         const items = raw.items.map(item => ({...validImportedItem(item),id:String(item.id),createdAt:item.createdAt || new Date().toISOString()}));
-        state = {version:1,items,draft:raw.draft && typeof raw.draft==='object' ? raw.draft : emptyDraft()};
-        if (!['package','stack'].includes(state.draft.type) || !Array.isArray(state.draft.packages) ||
-            !Array.isArray(state.draft.blocks) || !Array.isArray(state.draft.rows)) state.draft = emptyDraft();
-        if(!Array.isArray(state.draft.photoMarks))state.draft.photoMarks=[];
-        if(typeof state.draft.photoId!=='string')state.draft.photoId=null;
+        state = {version:1,items,draft:normalizeDraft(raw.draft||emptyDraft()),
+          presets:validatePresets(raw.presets||[])};
       }
-    } catch (_) {
-      state = {version:1,items:[],draft:emptyDraft()};
-      storageMessage('Alte Daten nicht lesbar – bitte Sicherung prüfen',true);
+    } catch (err) {
+      state = {version:1,items:[],draft:emptyDraft(),presets:[]};
+      // Nicht stillschweigend den alten Datensatz beim Tabwechsel überschreiben.
+      storageReadError = true;
+      storageMessage('Alte Zählungen geschützt – bitte Sicherung prüfen',true);
+      console.error('Inventurdaten konnten nicht eingelesen werden:',err);
     }
     activeTab = state.draft.type || 'package';
   }
@@ -181,6 +350,18 @@
       persist(); renderPreview();
     });
     return input;
+  }
+  function numberInput(value,placeholder,onInput) {
+    const input=document.createElement('input');
+    input.type='text';input.inputMode='numeric';input.autocomplete='off';
+    input.value=value;input.placeholder=placeholder;input.setAttribute('aria-label',placeholder);
+    input.addEventListener('input',()=>onInput(input.value));
+    return input;
+  }
+  function removeButton(title,onClick,disabled=false) {
+    const button=document.createElement('button');
+    button.type='button';button.textContent='×';button.title=title;button.disabled=disabled;
+    button.addEventListener('click',onClick);return button;
   }
   function renderGroups(kind) {
     const isPackage = kind === 'package';
@@ -204,6 +385,75 @@
       row.append(remove);target.append(row);
     });
   }
+  function renderOpenPacks() {
+    const target=$('open-pack-list');target.replaceChildren();
+    if(!state.draft.openPacks.length){target.textContent='Noch keine Restpakete übernommen.';target.classList.add('muted');return;}
+    target.classList.remove('muted');
+    state.draft.openPacks.forEach((g,i)=>{
+      const chip=document.createElement('span');chip.className='chip';
+      let text='Restpaket '+(i+1);
+      try{text+=': '+openPackCount(g)+' von '+g.perPack+' Stück';}catch(_){text+=': ungültige Eingabe';}
+      chip.append(document.createTextNode(text),removeButton('Restpaket entfernen',()=>{
+        state.draft.openPacks=state.draft.openPacks.filter(x=>x.id!==g.id);
+        persist();renderOpenPacks();renderPreview();
+      }));target.append(chip);
+    });
+  }
+  function renderPresets(selected='') {
+    const select=$('preset-select');select.replaceChildren();
+    const blank=document.createElement('option');blank.value='';blank.textContent='Bitte auswählen';select.append(blank);
+    state.presets.forEach(p=>{
+      const option=document.createElement('option');option.value=p.id;option.textContent=p.name+' · '+p.size+' Stück';select.append(option);
+    });
+    select.value=selected;
+    $('preset-delete').disabled=!selected;
+  }
+  function renderHeightBlocks() {
+    const target=$('height-block-list');target.replaceChildren();
+    state.draft.heightBlocks.forEach((h,i)=>{
+      const chip=document.createElement('span');chip.className='chip';
+      const value=heightCalculation(h);
+      chip.append(document.createTextNode('Schätzung '+(i+1)+': '+fmt(value.count)+' St. ('+value.layers+' Lagen)'),
+        removeButton('Höhenschätzung entfernen',()=>{
+          state.draft.heightBlocks=state.draft.heightBlocks.filter(x=>x.id!==h.id);
+          persist();renderHeightBlocks();renderPreview();
+        }));target.append(chip);
+    });
+  }
+  function renderHeightPreview() {
+    const el=$('height-preview'),h=state.draft.heightDraft;
+    $('height-spacer-fields').hidden=!h.withSpacers;
+    el.className='estimate-preview';
+    if(![h.height,h.thickness,h.perLayer].some(x=>String(x??'').trim()!=='')){
+      el.textContent='Maße eingeben, um die ungefähre Stückzahl zu berechnen.';return;
+    }
+    try{
+      const result=heightCalculation(h);
+      el.textContent='Geschätzt: '+fmt(result.count)+' Stück · '+result.layers+' Lagen à '+result.perLayer+
+        (result.remainder?' · Resthöhe '+result.remainder+' mm – Maße prüfen':'');
+      if(result.remainder)el.classList.add('warning');
+    }catch(err){el.textContent=err.message;el.classList.add('error');}
+  }
+  function renderLengths() {
+    const target=$('length-rows');target.replaceChildren();
+    state.draft.lengthRows.forEach(r=>{
+      const row=document.createElement('div');row.className='group-row';
+      row.append(numberInput(r.length,'Länge in mm',value=>{r.length=value;persist();renderPreview();}),
+        numberInput(r.count,'Stückzahl',value=>{r.count=value;persist();renderPreview();}),
+        removeButton('Länge entfernen',()=>{
+          state.draft.lengthRows=state.draft.lengthRows.filter(x=>x.id!==r.id);
+          persist();renderLengths();renderPreview();
+        },state.draft.lengthRows.length<=1));target.append(row);
+    });
+  }
+  function renderLengthSummary(v) {
+    const el=$('length-summary');
+    if(!v||!v.parts){el.textContent='Noch keine Längen eingetragen.';return;}
+    const parts=[fmt(v.total)+' Stück',fmt(v.lfm,2)+' lfm'];
+    if(v.area!==null)parts.push(fmt(v.area,3)+' m²');
+    if(v.volume!==null)parts.push(fmt(v.volume,4)+' m³');
+    el.textContent=parts.join(' · ');
+  }
   function renderRows() {
     const target = $('row-chips');target.replaceChildren();
     if (!state.draft.rows.length) {
@@ -220,6 +470,7 @@
   }
   function renderEditor() {
     const d=state.draft;
+    normalizePhoto(d);
     $('article-name').value=d.name || '';
     $('article-no').value=d.articleNo || '';
     $('article-note').value=d.note || '';
@@ -228,10 +479,25 @@
     $('loose-package').value=d.loosePackage || '';
     $('loose-stack').value=d.looseStack || '';
     $('row-input').value=d.rowInput || '';
-    $('editor-heading').textContent=d.editingId ? 'Artikel bearbeiten' : 'Neue Zählung';
-    $('save-item').textContent=d.editingId ? '✓ Änderungen speichern' : '✓ Artikel zur Ergebnisliste hinzufügen';
+    $('length-width').value=d.width || '';
+    $('length-thickness').value=d.thickness || '';
+    $('open-pack-size').value=d.openPackDraft.perPack || '';
+    $('open-pack-mode').value=d.openPackDraft.mode || 'remaining';
+    $('open-pack-amount').value=d.openPackDraft.amount || '';
+    $('open-pack-amount-label').textContent=d.openPackDraft.mode==='removed'?'Entnommene Stücke':'Noch vorhanden (Stück)';
+    $('height-total').value=d.heightDraft.height || '';
+    $('height-thickness').value=d.heightDraft.thickness || '';
+    $('height-per-layer').value=d.heightDraft.perLayer || '';
+    $('height-with-spacers').checked=!!d.heightDraft.withSpacers;
+    $('height-spacers').value=d.heightDraft.spacers || '';
+    $('height-spacer-thickness').value=d.heightDraft.spacerThickness || '';
+    $('editor-heading').textContent=(d.editingId||d.editingGroupId) ? 'Artikel bearbeiten' : 'Neue Zählung';
+    $('save-item').textContent=(d.editingId||d.editingGroupId) ? '✓ Änderungen speichern' : '✓ Artikel zur Ergebnisliste hinzufügen';
     renderGroups('package');renderGroups('stack');renderRows();renderPreview();
-    window.HolzOptiXPhoto?.renderCurrent();
+    renderOpenPacks();renderPresets();renderHeightBlocks();renderHeightPreview();renderLengths();
+    if(photoReady)Promise.resolve(window.HolzOptiXPhoto.renderCurrent()).catch(err=>{
+      $('photo-info').textContent='Foto konnte nicht angezeigt werden: '+err.message;
+    });
   }
   function renderPreview() {
     const d=state.draft;
@@ -243,11 +509,14 @@
       const output=[];
       if (value.lfm!==null) output.push(fmt(value.lfm,2)+' lfm');
       if (value.area!==null) output.push(fmt(value.area,3)+' m²');
+      if (value.volume!==null) output.push(fmt(value.volume,4)+' m³');
       $('conversion-result').textContent=output.join(' · ') || 'Für die Umrechnung Maße eingeben.';
+      renderLengthSummary(d.type==='length'?value:null);
     }catch(err){
       $('preview-total').textContent='—';
       $('total-formula').textContent='Eingaben prüfen';
       $('conversion-result').textContent=err.message;
+      if(d.type==='length')$('length-summary').textContent=err.message;
     }
   }
   function switchTab(tab) {
@@ -261,22 +530,27 @@
     $('editor').hidden=tab==='results';
     $('panel-package').hidden=tab!=='package';
     $('panel-stack').hidden=tab!=='stack';
+    $('panel-length').hidden=tab!=='length';
+    $('conversion').hidden=tab==='length';
     $('panel-results').hidden=tab!=='results';
     if(tab==='results')renderResults();else renderPreview();
-    if(tab==='stack')window.HolzOptiXPhoto?.draw();
+    if(tab==='stack' && photoReady)window.HolzOptiXPhoto.draw();
     window.scrollTo({top:0,behavior:'smooth'});
   }
   function hasDraftContent(d) {
-    return Boolean(d.editingId || String(d.name||'').trim() || String(d.articleNo||'').trim() ||
+    return Boolean(d.editingId||d.editingGroupId || String(d.name||'').trim() || String(d.articleNo||'').trim() ||
       String(d.note||'').trim() || String(d.length||'').trim() || String(d.width||'').trim() ||
-      String(d.rowInput||'').trim() ||
+      String(d.thickness||'').trim() || String(d.rowInput||'').trim() ||
       String(d.loosePackage||'').trim() || String(d.looseStack||'').trim() ||
+      (d.openPacks?.length||0)>0 || String(d.openPackDraft?.amount||'').trim() ||
+      (d.heightBlocks?.length||0)>0 || ['height','thickness','perLayer'].some(k=>String(d.heightDraft?.[k]||'').trim()) ||
       Boolean(d.photoId) || (d.photoMarks?.length||0)>0 ||
+      (d.lengthRows||[]).some(r=>r.length||r.count) ||
       d.rows.length || d.packages.some(g=>g.packs||g.perPack) || d.blocks.some(g=>g.perLayer||g.layers));
   }
   function cleanupPhoto(id) {
-    if(id && state.draft.photoId!==id && !state.items.some(item=>item.photoId===id))
-      window.HolzOptiXPhoto?.removeStored(id);
+    if(id && photoReady && state.draft.photoId!==id && !state.items.some(item=>item.photoId===id))
+      window.HolzOptiXPhoto.removeStored(id);
   }
   function newItem(type=activeTab==='results'?'package':activeTab, confirmDiscard=true) {
     if(confirmDiscard && hasDraftContent(state.draft) && !confirm('Aktuelle, noch nicht übernommene Eingaben verwerfen und einen neuen Artikel beginnen?'))return;
@@ -287,17 +561,53 @@
   function saveItem() {
     try {
       const d=state.draft;
+      if(d.type==='length'){
+        const rows=lengthRows(d);
+        if(!rows.length)throw Error('Bitte mindestens eine Länge mit Stückzahl eintragen.');
+        if(rows.length>1000)throw Error('Zu viele Holzlängen.');
+        const groupId=d.editingGroupId||uid();
+        const old=state.items.filter(x=>x.type==='length'&&x.groupId===groupId);
+        if(state.items.length-old.length+rows.length>5000)throw Error('Maximal 5.000 Ergebnispositionen.');
+        if(d.editingGroupId&&!old.length)throw Error('Die zu bearbeitende Längengruppe ist nicht mehr vorhanden.');
+        const entries=rows.map(r=>{
+          const previous=old.find(x=>x.length===r.length);
+          return createLengthEntry(d,r,{groupId,id:previous?.id,createdAt:previous?.createdAt});
+        });
+        if(entries.some(x=>x.total===0)&&!confirm('Mindestens eine Länge hat 0 Stück. Trotzdem speichern?'))return;
+        if(entries.some(entry=>state.items.some(x=>x.groupId!==groupId && x.name.toLowerCase()===entry.name.toLowerCase() &&
+           x.articleNo===entry.articleNo && x.length===entry.length))) {
+          if(!confirm('Mindestens eine dieser Holzlängen existiert bereits. Trotzdem zusätzliche Positionen speichern?'))return;
+        }
+        const prior=state.items;
+        if(old.length){
+          const index=state.items.findIndex(x=>x.type==='length'&&x.groupId===groupId);
+          state.items=state.items.filter(x=>!(x.type==='length'&&x.groupId===groupId));
+          state.items.splice(index,0,...entries);
+        }else state.items=[...state.items,...entries];
+        if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
+        state.draft=emptyDraft('length');persist();renderEditor();renderResults();switchTab('results');
+        return;
+      }
       const old=state.items.find(x=>x.id===d.editingId);
       const entry=createEntry(d,old?.id || uid(),old?.createdAt);
       if(entry.total===0 && !confirm('Der Artikel hat 0 Stück. Wirklich so in die Ergebnisliste übernehmen?'))return;
+      if(d.type==='stack' && entry.photoMarks.length &&
+         (entry.blocks.length||entry.heightBlocks.length||entry.rows.length||entry.loose!==null) &&
+         !confirm('Die Fotozählung wird mit anderen Teilzählungen addiert. Sind es sicher unterschiedliche Bretter?'))return;
+      if(!old&&state.items.length>=5000)throw Error('Maximal 5.000 Ergebnispositionen.');
       if(!old && state.items.some(x=>x.name.toLowerCase()===entry.name.toLowerCase() && x.articleNo===entry.articleNo)) {
         if(!confirm('Dieser Artikel ist bereits in der Ergebnisliste. Trotzdem eine weitere Zählung speichern?'))return;
       }
-      if(old)state.items=state.items.map(x=>x.id===old.id?entry:x);else state.items.push(entry);
-      state.draft=emptyDraft(d.type);
-      if(!persist()){alert('Speicherung fehlgeschlagen. Bitte genügend freien Speicher prüfen.');return;}
+      const prior=state.items;
+      if(old)state.items=state.items.map(x=>x.id===old.id?entry:x);else state.items=[...state.items,entry];
+      if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
+      state.draft=emptyDraft(d.type);persist();
       renderEditor();renderResults();switchTab('results');if(old)cleanupPhoto(old.photoId);
-    }catch(err){$('validation-message').textContent=err.message;$('validation-message').hidden=false;}
+    }catch(err){
+      $('validation-message').textContent=err.message;
+      $('validation-message').hidden=false;
+      $('validation-message').scrollIntoView?.({block:'center'});
+    }
   }
   function renderResults() {
     $('result-count').textContent=state.items.length;
@@ -308,14 +618,19 @@
     state.items.forEach((item,index)=>{
       const card=document.createElement('article');card.className='result-card';
       const info=document.createElement('div');
-      const title=document.createElement('h3');title.textContent=(index+1)+'. '+item.name;info.append(title);
+      const title=document.createElement('h3');title.textContent=(index+1)+'. '+item.name+
+        (item.type==='length'?' – '+fmt(item.length)+' mm':'');info.append(title);
       const details=document.createElement('p');
-      details.textContent=[item.articleNo?'Art.-Nr. '+item.articleNo:null,item.type==='package'?'Paketrechner':'Stapelzähler',item.note].filter(Boolean).join(' · ');
+      details.textContent=[item.articleNo?'Art.-Nr. '+item.articleNo:null,
+        item.type==='package'?'Paketrechner':item.type==='length'?'Längenzähler':'Stapelzähler',
+        item.note,item.heightBlocks?.length?'Höhenschätzung enthalten':null].filter(Boolean).join(' · ');
       info.append(details);
       const breakdown=document.createElement('p');breakdown.className='breakdown';breakdown.textContent=item.breakdown || 'Keine Gruppen';
       info.append(breakdown);
       if(item.lfm!==null){
-        const conv=document.createElement('p');conv.textContent=fmt(item.lfm,2)+' lfm'+(item.area!==null?' · '+fmt(item.area,3)+' m²':'');
+        const conv=document.createElement('p');conv.textContent=fmt(item.lfm,2)+' lfm'+
+          (item.area!==null?' · '+fmt(item.area,3)+' m²':'')+
+          (item.volume!==null&&item.volume!==undefined?' · '+fmt(item.volume,4)+' m³':'');
         info.append(conv);
       }
       const qty=document.createElement('div');qty.className='result-qty';qty.append(document.createTextNode(fmt(item.total)+' '));
@@ -324,7 +639,9 @@
       const edit=document.createElement('button');edit.className='btn subtle';edit.type='button';edit.textContent='✎ Bearbeiten';
       edit.addEventListener('click',()=>{
         if(hasDraftContent(state.draft)&&!confirm('Aktuelle Eingaben verwerfen und diesen Artikel bearbeiten?'))return;
-        state.draft=fromItem(item);persist();renderEditor();switchTab(item.type);
+        state.draft=item.type==='length'?fromLengthGroup(state.items.filter(x=>x.type==='length'&&x.groupId===item.groupId)):
+          fromItem(item);
+        persist();renderEditor();switchTab(item.type);
       });
       const remove=document.createElement('button');remove.className='btn danger';remove.type='button';remove.textContent='× Entfernen';
       remove.addEventListener('click',()=>{
@@ -349,11 +666,12 @@
   }
   function exportCsv() {
     if(!state.items.length){alert('Noch keine Ergebnisse vorhanden.');return;}
-    const rows=[['Nr.','Artikelnummer','Artikel','Werkzeug','Stück','Länge mm','Breite mm','Laufmeter','Quadratmeter','Berechnung','Bemerkung']];
+    const rows=[['Nr.','Artikelnummer','Artikel','Werkzeug','Stück','Länge mm','Breite mm','Laufmeter','Quadratmeter','Berechnung','Bemerkung','Stärke mm','Kubikmeter','Höhenschätzung']];
     state.items.forEach((x,i)=>rows.push([
-      i+1,x.articleNo,x.name,x.type==='package'?'Paket':'Stapel',x.total,
+      i+1,x.articleNo,x.name,x.type==='package'?'Paket':x.type==='length'?'Längen':'Stapel',x.total,
       x.length??'',x.width??'',x.lfm===null?'':String(Math.round(x.lfm*1000000)/1000000).replace('.',','),x.area===null?'':String(Math.round(x.area*1000000)/1000000).replace('.',','),
-      x.breakdown,x.note
+      x.breakdown,x.note,x.thickness??'',x.volume==null?'':String(Math.round(x.volume*1000000)/1000000).replace('.',','),
+      x.heightBlocks?.length?'Ja – geschätzt':'Nein'
     ]));
     download('\ufeff'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n'),'HolzOptiX_Inventur_Ergebnisse.csv','text/csv;charset=utf-8');
   }
@@ -362,7 +680,8 @@
       const images=await window.HolzOptiXPhoto.exportImages(state.items.map(x=>x.photoId));
       const missing=state.items.filter(x=>x.photoId && !images[x.photoId]).length;
       if(missing && !confirm(missing+' Foto(s) sind auf diesem Gerät nicht verfügbar. Sicherung trotzdem mit den gespeicherten Zählwerten erstellen?'))return;
-      download(JSON.stringify({format:'holzoptix-inventur/v1',exportedAt:new Date().toISOString(),items:state.items,photos:images},null,2),
+      download(JSON.stringify({format:'holzoptix-inventur/v1',exportedAt:new Date().toISOString(),items:state.items,
+        presets:state.presets,photos:images},null,2),
         'HolzOptiX_Inventur_Sicherung.json','application/json');
     }catch(err){alert('Datensicherung nicht möglich: '+err.message);}
   }
@@ -374,23 +693,132 @@
       if(payload?.format!=='holzoptix-inventur/v1'||!Array.isArray(payload.items)||payload.items.length>5000)
         throw Error('Keine gültige Inventur-Helfer-Sicherung.');
       const imports=payload.items.map(validImportedItem);
-      if(!imports.length){alert('Diese Sicherung enthält keine Artikel.');return;}
-      if(!confirm(imports.length+' Artikel aus der Sicherung zur aktuellen Ergebnisliste hinzufügen? Bestehende Einträge bleiben erhalten.'))return;
+      const presets=validatePresets(payload.presets||[]);
+      if(!imports.length&&!presets.length){alert('Diese Sicherung enthält keine Artikel oder Standard-Paketgrößen.');return;}
+      if(!confirm(imports.length+' Ergebnispositionen und '+presets.length+' Standard-Paketgrößen übernehmen? Bestehende Daten bleiben erhalten.'))return;
       if(state.items.length+imports.length>5000)throw Error('Die Liste würde zu groß werden.');
       const photos=await window.HolzOptiXPhoto.importImages(payload.photos);
-      for(const item of imports)item.photoId=photos.get(item.photoId)||null;
-      state.items.push(...imports);persist();renderResults();alert(imports.length+' Artikel übernommen.');
+      const groupIds=new Map();
+      for(const item of imports){
+        item.photoId=photos.get(item.photoId)||null;
+        if(item.type==='length'){
+          if(!groupIds.has(item.groupId))groupIds.set(item.groupId,uid());
+          item.groupId=groupIds.get(item.groupId);
+        }
+      }
+      const known=new Set(state.presets.map(p=>p.name.toLowerCase()));
+      const incoming=presets.filter(p=>!known.has(p.name.toLowerCase())).map(p=>({...p,id:uid()}));
+      if(state.presets.length+incoming.length>1000)throw Error('Zu viele Standard-Paketgrößen.');
+      const priorItems=state.items,priorPresets=state.presets;
+      state.items=[...state.items,...imports];
+      state.presets=[...state.presets,...incoming];
+      if(!persist()){
+        state.items=priorItems;state.presets=priorPresets;
+        for(const id of photos.values())window.HolzOptiXPhoto.removeStored(id);
+        throw Error('Zu wenig Speicher für den Import.');
+      }
+      renderResults();renderPresets();alert(imports.length+' Positionen und '+incoming.length+' neue Standardgrößen übernommen.');
     }catch(err){alert('Import nicht möglich: '+err.message);}
   }
   function wire() {
-    window.HolzOptiXPhoto.init({getDraft:()=>state.draft,persist,onCountChange:renderPreview,cleanupPhoto});
+    // Ein fehlendes oder beschädigtes Foto-Modul darf die übrigen Zähler nicht lahmlegen.
+    try {
+      if(window.HolzOptiXPhoto?.version !== '1.3.2')
+        throw Error('Die Fotodatei passt nicht zur Version 1.3.2.');
+      const initialized=window.HolzOptiXPhoto.init({getDraft:()=>state.draft,persist,onCountChange:renderPreview,cleanupPhoto});
+      if(initialized===false)throw Error('Dieses Gerät unterstützt den Fotomodus nicht.');
+      photoReady = true;
+    } catch(err) {
+      photoReady = false;
+      $('photo-info').textContent='Fotozählung momentan nicht verfügbar: '+err.message;
+      console.error('Foto-Modul konnte nicht gestartet werden:',err);
+    }
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
     for(const [id,key] of [['article-name','name'],['article-no','articleNo'],['article-note','note'],
-      ['uniform-length','length'],['uniform-width','width'],['loose-package','loosePackage'],['loose-stack','looseStack'],['row-input','rowInput']]){
+      ['uniform-length','length'],['uniform-width','width'],['length-width','width'],['length-thickness','thickness'],
+      ['loose-package','loosePackage'],['loose-stack','looseStack'],['row-input','rowInput']]){
       $(id).addEventListener('input',e=>{state.draft[key]=e.target.value;persist();renderPreview();});
     }
     $('add-package').addEventListener('click',()=>{state.draft.packages.push({id:uid(),packs:'',perPack:''});persist();renderGroups('package');});
     $('add-block').addEventListener('click',()=>{state.draft.blocks.push({id:uid(),perLayer:'',layers:''});persist();renderGroups('stack');});
+    for(const [id,key] of [['open-pack-size','perPack'],['open-pack-amount','amount']]){
+      $(id).addEventListener('input',e=>{state.draft.openPackDraft[key]=e.target.value;persist();});
+    }
+    $('open-pack-mode').addEventListener('change',e=>{
+      state.draft.openPackDraft.mode=e.target.value;
+      $('open-pack-amount-label').textContent=e.target.value==='removed'?'Entnommene Stücke':'Noch vorhanden (Stück)';
+      persist();
+    });
+    $('add-open-pack').addEventListener('click',()=>{
+      try{
+        const d=state.draft.openPackDraft;
+        const count=openPackCount(d);
+        if(state.draft.openPacks.length>=1000)throw Error('Maximal 1.000 Restpakete.');
+        state.draft.openPacks.push({id:uid(),perPack:positive(d.perPack,'Paketgröße'),mode:d.mode,
+          amount:quantity(d.amount,'Rest-/Entnahmemenge')});
+        state.draft.openPackDraft={perPack:d.perPack,mode:d.mode,amount:''};
+        $('open-pack-amount').value='';persist();renderOpenPacks();renderPreview();
+        $('open-pack-amount').focus();
+      }catch(err){alert(err.message);}
+    });
+    $('preset-select').addEventListener('change',e=>{
+      const preset=state.presets.find(p=>p.id===e.target.value);
+      $('preset-delete').disabled=!preset;
+      if(!preset)return;
+      $('preset-name').value=preset.name;$('preset-size').value=String(preset.size);
+      state.draft.packages[0].perPack=String(preset.size);
+      state.draft.openPackDraft.perPack=String(preset.size);
+      $('open-pack-size').value=String(preset.size);
+      persist();renderGroups('package');renderPreview();
+    });
+    $('preset-save').addEventListener('click',()=>{
+      try{
+        const name=$('preset-name').value.trim(),size=positive($('preset-size').value,'Standard-Paketgröße');
+        if(!name||name.length>80)throw Error('Bitte einen Namen mit maximal 80 Zeichen eingeben.');
+        const selected=state.presets.find(p=>p.id===$('preset-select').value);
+        const duplicate=state.presets.find(p=>p.name.toLowerCase()===name.toLowerCase()&&p!==selected);
+        if(duplicate)throw Error('Dieser Name ist bereits vergeben. Bitte einen anderen wählen.');
+        let id;
+        if(selected){selected.name=name;selected.size=size;id=selected.id;}
+        else {if(state.presets.length>=1000)throw Error('Maximal 1.000 Standard-Paketgrößen.');
+          id=uid();state.presets.push({id,name,size});}
+        persist();renderPresets(id);
+      }catch(err){alert(err.message);}
+    });
+    $('preset-delete').addEventListener('click',()=>{
+      const id=$('preset-select').value;
+      const preset=state.presets.find(p=>p.id===id);
+      if(!preset||!confirm('Standardgröße „'+preset.name+'“ löschen? Bereits gezählte Artikel bleiben erhalten.'))return;
+      state.presets=state.presets.filter(p=>p.id!==id);persist();renderPresets();
+      $('preset-name').value='';$('preset-size').value='';
+    });
+    for(const [id,key] of [['height-total','height'],['height-thickness','thickness'],['height-per-layer','perLayer'],
+      ['height-spacers','spacers'],['height-spacer-thickness','spacerThickness']]){
+      $(id).addEventListener('input',e=>{
+        state.draft.heightDraft[key]=e.target.value;persist();renderHeightPreview();
+      });
+    }
+    $('height-with-spacers').addEventListener('change',e=>{
+      state.draft.heightDraft.withSpacers=e.target.checked;
+      persist();renderHeightPreview();
+    });
+    $('add-height-block').addEventListener('click',()=>{
+      try{
+        const result=heightCalculation(state.draft.heightDraft);
+        if(result.remainder&&!confirm('Die Maße ergeben '+result.remainder+' mm Resthöhe. Schätzung trotzdem übernehmen?'))return;
+        if(state.draft.heightBlocks.length>=1000)throw Error('Maximal 1.000 Höhenblöcke.');
+        state.draft.heightBlocks.push({id:uid(),height:result.height,thickness:result.thickness,perLayer:result.perLayer,
+          withSpacers:result.withSpacers,spacers:result.spacers,spacerThickness:result.spacerThickness});
+        state.draft.heightDraft={height:'',thickness:'',perLayer:'',withSpacers:false,spacers:'',spacerThickness:''};
+        for(const id of ['height-total','height-thickness','height-per-layer','height-spacers','height-spacer-thickness'])$(id).value='';
+        $('height-with-spacers').checked=false;
+        persist();renderHeightBlocks();renderHeightPreview();renderPreview();
+      }catch(err){alert(err.message);}
+    });
+    $('add-length').addEventListener('click',()=>{
+      if(state.draft.lengthRows.length>=1000)return alert('Maximal 1.000 Holzlängen.');
+      state.draft.lengthRows.push({id:uid(),length:'',count:''});persist();renderLengths();renderPreview();
+    });
     const addRow=()=>{
       try{
         const n=quantity(state.draft.rowInput,'Einzelreihe');
