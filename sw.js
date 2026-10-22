@@ -1,6 +1,6 @@
 'use strict';
 // Nur der Ordner /inventur/ wird kontrolliert, keine anderen HolzOptiX-Module.
-const CACHE = 'holzoptix-inventur-v1-3-2-20261022';
+const CACHE = 'holzoptix-inventur-v1-4-20261022';
 // Die App selbst ist in index.html enthalten. Keine gemischten JS-Versionen mehr.
 const ASSETS = ['./','./index.html',
   './manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];

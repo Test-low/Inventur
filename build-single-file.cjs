@@ -22,7 +22,7 @@ inline('css', 'style.css', /  <link rel="stylesheet" href="\.\/style\.css\?v=[^\
 inline('photo', 'photo.js', /  <script src="\.\/photo\.js\?v=[^\"]+" defer><\/script>/, 'script');
 inline('app', 'app.js', /  <script src="\.\/app\.js\?v=[^\"]+" defer><\/script>/, 'script');
 
-if (!html.includes("HolzOptiXAppVersion = '1.3.2'") || !html.includes("version:'1.3.2'"))
+if (!html.includes("HolzOptiXAppVersion = '1.4'") || !html.includes("version:'1.4'"))
   throw Error('Versionsprüfung fehlgeschlagen – HTML wird nicht geschrieben.');
 fs.writeFileSync(htmlPath, html);
-console.log('OK: Vollständige Inventur v1.3.2 in index.html eingebettet (' + Buffer.byteLength(html) + ' Bytes).');
+console.log('OK: Vollständige Inventur v1.4 in index.html eingebettet (' + Buffer.byteLength(html) + ' Bytes).');

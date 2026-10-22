@@ -1,5 +1,5 @@
 'use strict';
-/* HolzOptiX Inventur 1.3.2: lokale Foto-Zählhilfe mit Farbgruppen, ohne Upload. */
+/* HolzOptiX Inventur 1.4: lokale Foto-Zählhilfe mit Farbgruppen, ohne Upload. */
 window.HolzOptiXPhoto = (() => {
   const DB_NAME = 'holzoptix-inventur-fotos-v1';
   const STORE = 'photos';
@@ -443,5 +443,5 @@ window.HolzOptiXPhoto = (() => {
     setMode('add');updateCount();
     return true;
   }
-  return {version:'1.3.2',init,renderCurrent,draw,removeStored,exportImages,importImages};
+  return {version:'1.4',init,renderCurrent,draw,removeStored,exportImages,importImages};
 })();

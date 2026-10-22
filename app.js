@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  if (typeof window !== 'undefined') window.HolzOptiXAppVersion = '1.3.2';
+  if (typeof window !== 'undefined') window.HolzOptiXAppVersion = '1.4';
   // Auf Touch-Geräten nur den Seitenzoom sperren. Der Foto-Canvas besitzt
   // eigene Pointer-Gesten zum Vergrößern und Verschieben des Bildes.
   if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) {
@@ -26,8 +26,14 @@
     photoId:null,photoMarks:[],photoZones:[newZone()],activePhotoZoneId:null,
     lengthRows:[{id:uid(),length:'',count:''}]
   });
-  let state = {version:1, items:[], draft:emptyDraft(),presets:[]};
-  let activeTab = 'package';
+  const toolType = tool => tool==='photo'?'stack':tool;
+  const newDrafts = () => ({package:emptyDraft('package'),stack:emptyDraft('stack'),
+    length:emptyDraft('length'),photo:emptyDraft('stack')});
+  let state = {version:1,items:[],draft:emptyDraft(),drafts:newDrafts(),parkedDrafts:{},presets:[]};
+  let activeTab = 'home';
+  let activeTool = 'package';
+  let packageMode = 'whole';
+  let stackMode = 'blocks';
   let photoReady = false;
   let storageReadError = false;
 
@@ -71,6 +77,7 @@
       return false;
     }
     try {
+      state.drafts[activeTool]=state.draft;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       storageMessage('Lokal gespeichert');
       return true;
@@ -238,7 +245,7 @@
     normalizePhoto(d);
     const v = calculate(d, true);
     const item = {
-      id, type:d.type, name, articleNo:String(d.articleNo || '').trim(),note:String(d.note || '').trim(),
+      id, type:d.type, tool:activeTool==='photo'?'photo':d.type, name, articleNo:String(d.articleNo || '').trim(),note:String(d.note || '').trim(),
       length:v.length,width:v.width,total:v.total,parts:v.parts,breakdown:v.breakdown,
       lfm:v.lfm,area:v.area,createdAt,updatedAt:new Date().toISOString(),
       packages:[],openPacks:[],blocks:[],heightBlocks:[],rows:[],loose:null,
@@ -276,7 +283,7 @@
     const lfm=total*length/1000;
     const area=width===null?null:lfm*width/1000;
     const volume=area===null||thickness===null?null:area*thickness/1000;
-    return {id:options.id||uid(),groupId:options.groupId||uid(),type:'length',name,articleNo,note,
+    return {id:options.id||uid(),groupId:options.groupId||uid(),type:'length',tool:'length',name,articleNo,note,
       length,width,thickness,total,parts:1,lfm,area,volume,
       breakdown:fmt(length)+' mm: '+total+' Stück',
       createdAt:options.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),
@@ -304,6 +311,7 @@
         (item.rows?.length || 0) > 10000 || (item.photoZones?.length||0)>50) throw Error('Zu viele Zählgruppen.');
     const d = fromItem(item);
     const rebuilt = createEntry(d);
+    rebuilt.tool=item.type==='stack'&&item.tool==='photo'?'photo':item.type;
     return rebuilt;
   }
   function validatePresets(input) {
@@ -325,17 +333,37 @@
         throw Error('Unbekanntes oder zu großes Inventur-Speicherformat.');
       if (raw?.version === 1 && Array.isArray(raw.items) && raw.items.length <= 5000) {
         const items = raw.items.map(item => ({...validImportedItem(item),id:String(item.id),createdAt:item.createdAt || new Date().toISOString()}));
-        state = {version:1,items,draft:normalizeDraft(raw.draft||emptyDraft()),
+        const drafts=newDrafts();
+        if(raw.drafts && typeof raw.drafts==='object' && !Array.isArray(raw.drafts)){
+          for(const tool of Object.keys(drafts)){
+            const candidate=normalizeDraft(raw.drafts[tool]);
+            if(candidate.type===toolType(tool))drafts[tool]=candidate;
+          }
+        }else if(raw.draft){
+          // v1.0–v1.3.2: den einzigen bisherigen Entwurf ohne Verlust übernehmen.
+          const old=normalizeDraft(raw.draft);
+          drafts[old.type]=old;
+        }
+        const parkedDrafts={};
+        if(raw.parkedDrafts && typeof raw.parkedDrafts==='object'){
+          for(const tool of Object.keys(drafts)){
+            if(raw.parkedDrafts[tool]?.type===toolType(tool))
+              parkedDrafts[tool]=normalizeDraft(raw.parkedDrafts[tool]);
+          }
+        }
+        state = {version:1,items,draft:drafts.package,drafts,parkedDrafts,
           presets:validatePresets(raw.presets||[])};
       }
     } catch (err) {
-      state = {version:1,items:[],draft:emptyDraft(),presets:[]};
+      state = {version:1,items:[],draft:emptyDraft(),drafts:newDrafts(),parkedDrafts:{},presets:[]};
       // Nicht stillschweigend den alten Datensatz beim Tabwechsel überschreiben.
       storageReadError = true;
       storageMessage('Alte Zählungen geschützt – bitte Sicherung prüfen',true);
       console.error('Inventurdaten konnten nicht eingelesen werden:',err);
     }
-    activeTab = state.draft.type || 'package';
+    activeTab = 'home';
+    activeTool = 'package';
+    state.draft = state.drafts.package;
   }
   function createNumberInput(value, placeholder, kind, id, field) {
     const input = document.createElement('input');
@@ -491,17 +519,18 @@
     $('height-with-spacers').checked=!!d.heightDraft.withSpacers;
     $('height-spacers').value=d.heightDraft.spacers || '';
     $('height-spacer-thickness').value=d.heightDraft.spacerThickness || '';
-    $('editor-heading').textContent=(d.editingId||d.editingGroupId) ? 'Artikel bearbeiten' : 'Neue Zählung';
-    $('save-item').textContent=(d.editingId||d.editingGroupId) ? '✓ Änderungen speichern' : '✓ Artikel zur Ergebnisliste hinzufügen';
+    $('editor-heading').textContent=(d.editingId||d.editingGroupId) ? 'Artikel bearbeiten' : 'Zählung speichern';
+    $('confirm-save-item').textContent=(d.editingId||d.editingGroupId) ? '✓ Änderungen speichern' : '✓ Zur Ergebnisliste hinzufügen';
     renderGroups('package');renderGroups('stack');renderRows();renderPreview();
     renderOpenPacks();renderPresets();renderHeightBlocks();renderHeightPreview();renderLengths();
-    if(photoReady)Promise.resolve(window.HolzOptiXPhoto.renderCurrent()).catch(err=>{
+    if(photoReady && ['stack','photo'].includes(activeTool))Promise.resolve(window.HolzOptiXPhoto.renderCurrent()).catch(err=>{
       $('photo-info').textContent='Foto konnte nicht angezeigt werden: '+err.message;
     });
   }
   function renderPreview() {
     const d=state.draft;
     $('validation-message').hidden=true;
+    $('count-error').hidden=true;
     try{
       const value=calculate(d);
       $('preview-total').textContent=fmt(value.total);
@@ -516,27 +545,85 @@
       $('preview-total').textContent='—';
       $('total-formula').textContent='Eingaben prüfen';
       $('conversion-result').textContent=err.message;
+      $('count-error').textContent=err.message;
+      $('count-error').hidden=false;
       if(d.type==='length')$('length-summary').textContent=err.message;
     }
   }
+  function setPackageMode(mode) {
+    packageMode=mode;
+    document.querySelectorAll('[data-package-mode]').forEach(button=>
+      button.classList.toggle('is-active',button.dataset.packageMode===mode));
+    document.querySelectorAll('[data-package-section]').forEach(section=>
+      section.hidden=section.dataset.packageSection!==mode);
+  }
+  function setStackMode(mode) {
+    stackMode=mode;
+    document.querySelectorAll('[data-stack-mode]').forEach(button=>
+      button.classList.toggle('is-active',button.dataset.stackMode===mode));
+    document.querySelectorAll('[data-stack-section]').forEach(section=>
+      section.hidden=section.dataset.stackSection!==mode);
+    if(mode==='photo'&&photoReady)requestAnimationFrame(()=>window.HolzOptiXPhoto.draw());
+  }
+  function renderHome() {
+    $('home-result-count').textContent=String(state.items.length);
+    document.querySelectorAll('[data-draft-badge]').forEach(badge=>{
+      badge.hidden=!hasDraftContent(state.drafts[badge.dataset.draftBadge]);
+    });
+  }
   function switchTab(tab) {
     activeTab=tab;
-    if(tab!=='results'){state.draft.type=tab;persist();}
+    const isTool=['package','stack','length','photo'].includes(tab);
+    if(isTool){
+      state.drafts[activeTool]=state.draft;
+      activeTool=tab;
+      state.draft=state.drafts[tab];
+      state.draft.type=toolType(tab);
+      if(tab==='photo')stackMode='photo';
+      if(tab==='stack'&&stackMode==='photo')stackMode='blocks';
+      renderEditor();
+      persist();
+    }
     for(const button of document.querySelectorAll('.tab')){
       const chosen=button.dataset.tab===tab;
       button.classList.toggle('is-active',chosen);
       if(chosen)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     }
-    $('editor').hidden=tab==='results';
+    $('home-screen').hidden=tab!=='home';
+    $('editor').hidden=!isTool;
     $('panel-package').hidden=tab!=='package';
-    $('panel-stack').hidden=tab!=='stack';
+    $('panel-stack').hidden=!['stack','photo'].includes(tab);
     $('panel-length').hidden=tab!=='length';
     $('conversion').hidden=tab==='length';
     $('panel-results').hidden=tab!=='results';
-    if(tab==='results')renderResults();else renderPreview();
-    if(tab==='stack' && photoReady)window.HolzOptiXPhoto.draw();
+    if(isTool){
+      $('tool-heading').textContent={package:'Pakete zählen',stack:'Stapel zählen',length:'Holzlängen zählen',photo:'Fotozählung'}[tab];
+      $('stack-methods').hidden=tab==='photo';
+      $('attach-photo-stack').hidden=tab!=='photo';
+      setPackageMode(packageMode);
+      setStackMode(stackMode);
+      renderPreview();
+    }
+    if(tab==='results')renderResults();
+    renderHome();
     window.scrollTo({top:0,behavior:'smooth'});
   }
+  function openSaveSheet() {
+    try{
+      const value=calculate(state.draft,true);
+      if(!value.parts)throw Error('Bitte zuerst eine Menge erfassen.');
+      $('count-error').hidden=true;
+      $('save-sheet-total').textContent=fmt(value.total)+' Stück';
+      $('save-sheet').hidden=false;
+      $('validation-message').hidden=true;
+      $('article-name').focus();
+    }catch(err){
+      $('count-error').textContent=err.message;
+      $('count-error').hidden=false;
+      $('count-error').scrollIntoView?.({block:'nearest'});
+    }
+  }
+  function closeSaveSheet(){$('save-sheet').hidden=true;}
   function hasDraftContent(d) {
     return Boolean(d.editingId||d.editingGroupId || String(d.name||'').trim() || String(d.articleNo||'').trim() ||
       String(d.note||'').trim() || String(d.length||'').trim() || String(d.width||'').trim() ||
@@ -549,14 +636,29 @@
       d.rows.length || d.packages.some(g=>g.packs||g.perPack) || d.blocks.some(g=>g.perLayer||g.layers));
   }
   function cleanupPhoto(id) {
-    if(id && photoReady && state.draft.photoId!==id && !state.items.some(item=>item.photoId===id))
+    if(id && photoReady && !Object.values(state.drafts).some(d=>d.photoId===id) &&
+       !Object.values(state.parkedDrafts).some(d=>d.photoId===id) &&
+       !state.items.some(item=>item.photoId===id))
       window.HolzOptiXPhoto.removeStored(id);
   }
-  function newItem(type=activeTab==='results'?'package':activeTab, confirmDiscard=true) {
+  function newItem(type=activeTool, confirmDiscard=true) {
+    if(type!==activeTool)switchTab(type);
     if(confirmDiscard && hasDraftContent(state.draft) && !confirm('Aktuelle, noch nicht übernommene Eingaben verwerfen und einen neuen Artikel beginnen?'))return;
     const oldPhoto=state.draft.photoId;
-    state.draft=emptyDraft(type);persist();renderEditor();switchTab(type);cleanupPhoto(oldPhoto);
-    $('article-name').focus();
+    state.draft=state.parkedDrafts[activeTool] || emptyDraft(toolType(activeTool));
+    state.drafts[activeTool]=state.draft;
+    delete state.parkedDrafts[activeTool];
+    closeSaveSheet();persist();renderEditor();renderHome();cleanupPhoto(oldPhoto);
+    const field=activeTool==='package'?$('package-groups').querySelector?.('input'):
+      activeTool==='length'?$('length-rows').querySelector?.('input'):$('row-input');
+    field?.focus();
+  }
+  function finishSavedDraft() {
+    const parked=state.parkedDrafts[activeTool];
+    state.draft=parked || emptyDraft(toolType(activeTool));
+    state.drafts[activeTool]=state.draft;
+    delete state.parkedDrafts[activeTool];
+    closeSaveSheet();persist();renderResults();switchTab('results');
   }
   function saveItem() {
     try {
@@ -585,11 +687,12 @@
           state.items.splice(index,0,...entries);
         }else state.items=[...state.items,...entries];
         if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
-        state.draft=emptyDraft('length');persist();renderEditor();renderResults();switchTab('results');
-        return;
+        finishSavedDraft();
+        return true;
       }
       const old=state.items.find(x=>x.id===d.editingId);
       const entry=createEntry(d,old?.id || uid(),old?.createdAt);
+      entry.tool=activeTool;
       if(entry.total===0 && !confirm('Der Artikel hat 0 Stück. Wirklich so in die Ergebnisliste übernehmen?'))return;
       if(d.type==='stack' && entry.photoMarks.length &&
          (entry.blocks.length||entry.heightBlocks.length||entry.rows.length||entry.loose!==null) &&
@@ -601,8 +704,8 @@
       const prior=state.items;
       if(old)state.items=state.items.map(x=>x.id===old.id?entry:x);else state.items=[...state.items,entry];
       if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
-      state.draft=emptyDraft(d.type);persist();
-      renderEditor();renderResults();switchTab('results');if(old)cleanupPhoto(old.photoId);
+      finishSavedDraft();if(old)cleanupPhoto(old.photoId);
+      return true;
     }catch(err){
       $('validation-message').textContent=err.message;
       $('validation-message').hidden=false;
@@ -613,16 +716,22 @@
     $('result-count').textContent=state.items.length;
     $('summary-articles').textContent=state.items.length;
     $('summary-counts').textContent=fmt(state.items.reduce((n,x)=>n+x.parts,0));
-    $('results-empty').hidden=state.items.length>0;
+    const query=String($('results-search').value||'').toLocaleLowerCase('de-DE').trim();
+    const visible=state.items.map((item,index)=>({item,index})).filter(({item})=>
+      !query || [item.name,item.articleNo,item.note,String(item.length??'')].some(value=>
+        String(value||'').toLocaleLowerCase('de-DE').includes(query)));
+    $('results-empty').hidden=visible.length>0;
+    $('results-empty').textContent=state.items.length?
+      'Keine passenden Artikel gefunden.':'Noch keine Positionen erfasst. Starte über die großen Werkzeug-Kacheln.';
     const container=$('results-list');container.replaceChildren();
-    state.items.forEach((item,index)=>{
+    visible.forEach(({item,index})=>{
       const card=document.createElement('article');card.className='result-card';
       const info=document.createElement('div');
       const title=document.createElement('h3');title.textContent=(index+1)+'. '+item.name+
         (item.type==='length'?' – '+fmt(item.length)+' mm':'');info.append(title);
       const details=document.createElement('p');
       details.textContent=[item.articleNo?'Art.-Nr. '+item.articleNo:null,
-        item.type==='package'?'Paketrechner':item.type==='length'?'Längenzähler':'Stapelzähler',
+        item.type==='package'?'Paketrechner':item.type==='length'?'Längenzähler':item.tool==='photo'?'Fotozähler':'Stapelzähler',
         item.note,item.heightBlocks?.length?'Höhenschätzung enthalten':null].filter(Boolean).join(' · ');
       info.append(details);
       const breakdown=document.createElement('p');breakdown.className='breakdown';breakdown.textContent=item.breakdown || 'Keine Gruppen';
@@ -638,10 +747,16 @@
       const controls=document.createElement('div');controls.className='result-controls';
       const edit=document.createElement('button');edit.className='btn subtle';edit.type='button';edit.textContent='✎ Bearbeiten';
       edit.addEventListener('click',()=>{
-        if(hasDraftContent(state.draft)&&!confirm('Aktuelle Eingaben verwerfen und diesen Artikel bearbeiten?'))return;
-        state.draft=item.type==='length'?fromLengthGroup(state.items.filter(x=>x.type==='length'&&x.groupId===item.groupId)):
+        const tool=item.type==='stack'&&item.tool==='photo'?'photo':item.type;
+        const existing=state.drafts[tool];
+        if((existing.editingId||existing.editingGroupId)&&
+            !confirm('Du bearbeitest hier bereits einen Artikel. Diese Bearbeitung ersetzen?'))return;
+        if(hasDraftContent(existing) && !state.parkedDrafts[tool])state.parkedDrafts[tool]=existing;
+        const draft=item.type==='length'?fromLengthGroup(state.items.filter(x=>x.type==='length'&&x.groupId===item.groupId)):
           fromItem(item);
-        persist();renderEditor();switchTab(item.type);
+        state.drafts[tool]=draft;
+        if(activeTool===tool)state.draft=draft;
+        switchTab(tool);
       });
       const remove=document.createElement('button');remove.className='btn danger';remove.type='button';remove.textContent='× Entfernen';
       remove.addEventListener('click',()=>{
@@ -668,7 +783,7 @@
     if(!state.items.length){alert('Noch keine Ergebnisse vorhanden.');return;}
     const rows=[['Nr.','Artikelnummer','Artikel','Werkzeug','Stück','Länge mm','Breite mm','Laufmeter','Quadratmeter','Berechnung','Bemerkung','Stärke mm','Kubikmeter','Höhenschätzung']];
     state.items.forEach((x,i)=>rows.push([
-      i+1,x.articleNo,x.name,x.type==='package'?'Paket':x.type==='length'?'Längen':'Stapel',x.total,
+      i+1,x.articleNo,x.name,x.type==='package'?'Paket':x.type==='length'?'Längen':x.tool==='photo'?'Foto':'Stapel',x.total,
       x.length??'',x.width??'',x.lfm===null?'':String(Math.round(x.lfm*1000000)/1000000).replace('.',','),x.area===null?'':String(Math.round(x.area*1000000)/1000000).replace('.',','),
       x.breakdown,x.note,x.thickness??'',x.volume==null?'':String(Math.round(x.volume*1000000)/1000000).replace('.',','),
       x.heightBlocks?.length?'Ja – geschätzt':'Nein'
@@ -720,11 +835,27 @@
       renderResults();renderPresets();alert(imports.length+' Positionen und '+incoming.length+' neue Standardgrößen übernommen.');
     }catch(err){alert('Import nicht möglich: '+err.message);}
   }
+  function attachPhotoToStack() {
+    const source=state.drafts.photo,target=state.drafts.stack;
+    if(!source.photoMarks.length)return alert('Bitte zuerst Bretter auf dem Foto markieren.');
+    if(target.photoId || target.photoMarks.length)
+      return alert('Dein Stapelentwurf enthält bereits eine Fotozählung. Bitte diese erst speichern oder entfernen.');
+    if(!confirm(source.photoMarks.length+' Fotomarkierungen zur bestehenden Stapelzählung übernehmen? Die Fotos werden nicht doppelt gezählt.'))return;
+    target.photoId=source.photoId;
+    target.photoMarks=source.photoMarks.map(mark=>({...mark}));
+    target.photoZones=source.photoZones.map(zone=>({...zone}));
+    target.activePhotoZoneId=source.activePhotoZoneId;
+    state.drafts.photo=emptyDraft('stack');
+    state.draft=state.drafts.photo;
+    persist();
+    switchTab('stack');
+    setStackMode('photo');
+  }
   function wire() {
     // Ein fehlendes oder beschädigtes Foto-Modul darf die übrigen Zähler nicht lahmlegen.
     try {
-      if(window.HolzOptiXPhoto?.version !== '1.3.2')
-        throw Error('Die Fotodatei passt nicht zur Version 1.3.2.');
+      if(window.HolzOptiXPhoto?.version !== '1.4')
+        throw Error('Die Fotodatei passt nicht zur Version 1.4.');
       const initialized=window.HolzOptiXPhoto.init({getDraft:()=>state.draft,persist,onCountChange:renderPreview,cleanupPhoto});
       if(initialized===false)throw Error('Dieses Gerät unterstützt den Fotomodus nicht.');
       photoReady = true;
@@ -734,6 +865,19 @@
       console.error('Foto-Modul konnte nicht gestartet werden:',err);
     }
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+    document.querySelectorAll('[data-tool]').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tool)));
+    document.querySelectorAll('[data-package-mode]').forEach(btn=>btn.addEventListener('click',()=>setPackageMode(btn.dataset.packageMode)));
+    document.querySelectorAll('[data-stack-mode]').forEach(btn=>btn.addEventListener('click',()=>setStackMode(btn.dataset.stackMode)));
+    $('home-results').addEventListener('click',()=>switchTab('results'));
+    $('back-home').addEventListener('click',()=>switchTab('home'));
+    $('results-home').addEventListener('click',()=>switchTab('home'));
+    $('results-search').addEventListener('input',renderResults);
+    $('attach-photo-stack').addEventListener('click',attachPhotoToStack);
+    $('save-cancel').addEventListener('click',closeSaveSheet);
+    $('confirm-save-item').addEventListener('click',saveItem);
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!$('save-sheet').hidden)closeSaveSheet();
+    });
     for(const [id,key] of [['article-name','name'],['article-no','articleNo'],['article-note','note'],
       ['uniform-length','length'],['uniform-width','width'],['length-width','width'],['length-thickness','thickness'],
       ['loose-package','loosePackage'],['loose-stack','looseStack'],['row-input','rowInput']]){
@@ -828,10 +972,10 @@
     };
     $('add-row').addEventListener('click',addRow);
     $('row-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addRow();}});
-    $('save-item').addEventListener('click',saveItem);
+    $('save-item').addEventListener('click',openSaveSheet);
     $('go-results').addEventListener('click',()=>switchTab('results'));
     $('new-item').addEventListener('click',()=>newItem());
-    $('result-new').addEventListener('click',()=>newItem('package'));
+    $('result-new').addEventListener('click',()=>switchTab('home'));
     $('export-csv').addEventListener('click',exportCsv);
     $('export-json').addEventListener('click',exportJson);
     $('print-results').addEventListener('click',()=>{if(!state.items.length)return alert('Noch keine Ergebnisse vorhanden.');window.print();});
@@ -845,7 +989,7 @@
       state.items=[];persist();renderResults();oldPhotos.forEach(cleanupPhoto);
     });
   }
-  load();wire();renderEditor();renderResults();switchTab(activeTab);
+  load();wire();renderEditor();renderResults();switchTab('home');
   if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}));
   }

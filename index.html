@@ -28,6 +28,15 @@
 @media (pointer:coarse){html,body{touch-action:pan-x pan-y}.photo-stage canvas{touch-action:none}}
 .space-top{margin-top:14px}.check-line{display:flex;align-items:center;gap:9px;font-size:14px;color:#315741;font-weight:700;margin:14px 0}.check-line input{width:19px;height:19px;accent-color:#23834d}.estimate-preview{border:1px solid #cddfcd;border-radius:10px;background:#edf7ef;color:#25613c;margin:12px 0;padding:12px 14px;font-size:14px;line-height:1.5}.estimate-preview.warning{border-color:#dfccaa;background:#fff7e8;color:#94651b}.estimate-preview.error{border-color:#eac7c3;background:#fff2f0;color:#9b443b}.photo-zone-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px}.photo-zones{display:grid;gap:8px}.photo-zone{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:7px;align-items:center;padding:9px;border:1px solid #d4e3d6;border-radius:10px;background:white}.photo-zone.active{background:#eaf6ee;border-color:#2c9659}.photo-zone input[type=color]{width:30px;height:36px;padding:0;border:0;background:transparent;cursor:pointer}.photo-zone input[type=text]{min-width:0;max-width:100%;border:1px solid #ccddce;border-radius:7px;padding:8px;font-size:14px}.photo-zone .btn{padding:7px 9px;min-height:35px;font-size:12px}.photo-zone .zone-count{font-weight:750;font-size:13px;color:#235c3a}.photo-zone .zone-selected{font-weight:800}.photo-zone.locked{background:#f2f5f1}.photo-zone .zone-select{grid-column:2;justify-self:start}.photo-zone .zone-actions{display:flex;gap:4px;flex-wrap:wrap}.photo-zone .zone-actions .btn{font-size:12px}@media(max-width:700px){.photo-zone{grid-template-columns:30px minmax(0,1fr) auto}.photo-zone .zone-actions{grid-column:2/-1;justify-self:end}.photo-zone .zone-select{grid-column:1/-1}.photo-zone .zone-count{white-space:nowrap}}.field select{appearance:auto}
 .build-warning{background:#fff2e5;border:2px solid #df9c4d;color:#7b3f17;border-radius:13px;padding:14px 17px;margin-bottom:18px;line-height:1.5;display:grid;gap:6px}.build-warning code{background:#ffe6c8;padding:2px 5px;border-radius:4px}
+
+/* v1.4 – Startseite mit Kacheln und fokussierte Zählansichten. */
+.container{max-width:960px}.home-screen{display:grid;gap:22px}.home-intro{padding:12px 2px 0}.home-intro h1{font-size:clamp(29px,5vw,42px);line-height:1.12;letter-spacing:-1.1px;margin:10px 0}.home-intro p:last-child{color:#687e70;line-height:1.45;margin:0}.tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.tool-card{border:1px solid #d5e5d9;border-radius:19px;background:#fff;box-shadow:0 5px 18px #214c2d12;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:9px;min-height:185px;padding:20px 16px;color:#204332;text-align:center;transition:border-color .15s,background .15s,transform .15s}.tool-card:hover,.tool-card:focus-visible{border-color:#278d52;background:#f3faf4;transform:translateY(-1px)}.tool-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:17px;background:#e4f3e8;color:#227b4a;font-size:31px;font-weight:800}.tool-card strong{font-size:20px}.tool-card small{font-size:13px;color:#6b8374;max-width:180px;line-height:1.4}.draft-badge{font-size:12px;background:#dff1e5;color:#236d43;padding:6px 10px;border-radius:30px;font-weight:800}.home-results{background:#204c37;color:white;border:0;border-radius:15px;padding:19px;display:flex;justify-content:space-between;gap:16px;align-items:center;font-weight:750;font-size:16px;min-height:64px}.home-results>span:last-child{font-size:13px;color:#cee7d5}.home-footnote{text-align:center;color:#839689;font-size:12px;margin:0 0 5px}
+.workspace-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:3px}.workspace-head h2{font-size:clamp(20px,3vw,27px);margin:5px 0;letter-spacing:-.5px}.workspace-head>.btn{flex-shrink:0}.workspace-head .eyebrow{font-size:10px}.mode-nav{display:flex;flex-wrap:wrap;gap:7px;margin:3px 0 20px}.mode-button{flex:1;min-width:100px;padding:12px 9px;background:#f3f7f3;border:1px solid #d7e3d9;border-radius:10px;color:#50715b;font-weight:750;font-size:13px;min-height:47px}.mode-button.is-active{background:#def0e4;border-color:#308951;color:#1d623b;box-shadow:inset 0 0 0 1px #4a9b65}.method-notice{font-size:12px;color:#728879;background:#f5f9f5;border-radius:9px;padding:10px 12px;margin-top:17px}.panel .subhead{margin:3px 0 16px}.panel .group-list{margin-bottom:14px}
+.metrics-card{padding:11px 18px}.metrics-card .conversion{margin:0;padding:0;border:0}.metrics-card summary{padding:6px 0}.count-bar{position:sticky;bottom:0;z-index:20;background:#fff;border:1px solid #bbd7c4;box-shadow:0 -5px 22px #132d1f20;border-radius:15px;padding:12px 15px;display:flex;gap:12px;align-items:center;margin-top:5px}.count-values{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.count-values>span:first-child{font-size:12px;color:#6b806f;font-weight:750}.count-values strong{font-size:31px;color:#207a48;line-height:1.1;font-variant-numeric:tabular-nums}.count-values strong small{font-size:13px;font-weight:600}.count-parts{font-size:11px;color:#77877b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.count-bar #save-item{flex-shrink:0}.count-list{flex-shrink:0;min-width:42px}
+.save-sheet{position:fixed;inset:0;background:#102e20a9;z-index:90;display:flex;justify-content:center;align-items:center;padding:14px}.save-dialog{background:white;border:1px solid #d9e9dc;border-radius:20px;box-shadow:0 15px 60px #0a211a55;padding:23px;width:min(100%,570px);max-height:92dvh;overflow:auto}.save-dialog h2{font-size:24px;margin:3px 0}.save-dialog .section-head{align-items:center}.save-sheet-total{border-radius:12px;background:#e8f5ed;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:19px;gap:12px}.save-sheet-total>span{font-size:13px;color:#527961}.save-sheet-total strong{color:#177c43;font-size:26px;font-variant-numeric:tabular-nums}.results-filter{margin:10px 0 20px}.back-results{justify-self:start}.safety-card summary{cursor:pointer;font-weight:750;color:#285d3d;padding:3px 0}.safety-card details[open] summary{margin-bottom:12px}
+@media(max-width:700px){.tool-grid{gap:10px}.tool-card{min-height:156px;padding:15px 9px;gap:7px;border-radius:15px}.tool-icon{width:49px;height:49px;font-size:27px;border-radius:14px}.tool-card strong{font-size:17px}.tool-card small{font-size:12px}.home-results{padding:16px}.workspace-head{flex-wrap:wrap}.workspace-head .btn{font-size:12px;padding:8px 10px}.mode-nav{gap:6px}.mode-button{min-width:calc(50% - 6px);padding:10px 7px}.count-bar{margin:3px -12px -9px;border-radius:15px 15px 0 0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));gap:8px}.count-values strong{font-size:27px}.count-bar #save-item{font-size:14px;min-height:46px;padding:10px 12px}.count-list{min-width:40px}.save-dialog{padding:17px}.save-dialog .fields.two{grid-template-columns:1fr}.save-sheet-total strong{font-size:23px}}
+@media print{.home-screen,.workspace-head,.count-bar,.metrics-card,.save-sheet,.back-results,.results-filter,.method-notice{display:none!important}.results-panel{display:block!important}.results-panel .safety-card{display:none!important}}
   </style>
   <title>HolzOptiX – Inventur-Helfer</title>
 </head>
@@ -44,42 +53,61 @@
       <strong>Programmdateien nicht vollständig geladen.</strong>
       <span>Bitte die aktuelle <code>index.html</code> hochladen und die Seite erneut öffnen. Gespeicherte Browserdaten nicht löschen.</span>
     </section>
-    <div class="intro">
-      <div>
-        <p class="eyebrow">ZÄHLEN, RECHNEN, NOTIEREN</p>
-        <h1>Inventur leicht gemacht<span class="dot">.</span></h1>
-        <p>Für Pakete, Bunde, große Bretterstapel und verschiedene Holzlängen. Ohne Anmeldung.</p>
+    <section id="home-screen" class="home-screen">
+      <div class="home-intro"><p class="eyebrow">DEINE ZÄHLHILFEN</p><h1>Was möchtest du zählen<span class="dot">?</span></h1>
+        <p>Werkzeug auswählen und direkt loslegen. Deine Entwürfe bleiben automatisch erhalten.</p></div>
+      <div class="tool-grid" aria-label="Zählwerkzeug auswählen">
+        <button class="tool-card" type="button" data-tool="package"><span class="tool-icon">▦</span><strong>Pakete</strong><small>Ganze und angebrochene Pakete</small><span class="draft-badge" data-draft-badge="package" hidden>↻ Zählung fortsetzen</span></button>
+        <button class="tool-card" type="button" data-tool="stack"><span class="tool-icon">▤</span><strong>Stapel</strong><small>Lagen, Reihen und Stapelhöhe</small><span class="draft-badge" data-draft-badge="stack" hidden>↻ Zählung fortsetzen</span></button>
+        <button class="tool-card" type="button" data-tool="length"><span class="tool-icon">↔</span><strong>Holzlängen</strong><small>Verschiedene Längen erfassen</small><span class="draft-badge" data-draft-badge="length" hidden>↻ Zählung fortsetzen</span></button>
+        <button class="tool-card" type="button" data-tool="photo"><span class="tool-icon">▣</span><strong>Fotozähler</strong><small>Bretter farbig markieren</small><span class="draft-badge" data-draft-badge="photo" hidden>↻ Zählung fortsetzen</span></button>
       </div>
-    </div>
-    <nav class="tabs" aria-label="Werkzeug auswählen">
+      <button id="home-results" class="home-results" type="button"><span>☷ &nbsp; Ergebnisliste</span><span><span id="home-result-count">0</span> Positionen &nbsp; →</span></button>
+      <p class="home-footnote">Ohne Anmeldung · Lokal gespeichert · Auch für die Papierinventur</p>
+    </section>
+    <nav class="tabs" aria-label="Werkzeug auswählen" hidden>
       <button class="tab is-active" type="button" data-tab="package" aria-current="page">▦ <span>Paketrechner</span></button>
       <button class="tab" type="button" data-tab="stack">▤ <span>Stapelzähler</span></button>
       <button class="tab" type="button" data-tab="length">↔ <span>Längenzähler</span></button>
       <button class="tab" type="button" data-tab="results">☷ <span>Ergebnisliste</span> <span id="result-count" class="pill">0</span></button>
     </nav>
 
-    <div id="editor" class="editor">
-      <section class="card article-card">
-        <div class="section-head">
-          <div><p class="eyebrow">ARTIKEL</p><h2 id="editor-heading">Neue Zählung</h2></div>
-          <button id="new-item" class="btn subtle" type="button">＋ Neuer Artikel</button>
-        </div>
-        <div class="fields two">
-          <label class="field"><span>Artikelbezeichnung <em>*</em></span><input id="article-name" maxlength="100" type="text" placeholder="z. B. Glattkantbrett Fichte" autocomplete="off"></label>
-          <label class="field"><span>Artikelnummer <small>(optional)</small></span><input id="article-no" maxlength="60" type="text" placeholder="Nummer aus Papierliste" autocomplete="off"></label>
-        </div>
-        <label class="field note-field"><span>Bemerkung <small>(optional)</small></span><input id="article-note" maxlength="160" type="text" placeholder="z. B. Außenlager, Stapel 3" autocomplete="off"></label>
-      </section>
+    <div id="editor" class="editor" hidden>
+      <div class="workspace-head">
+        <button id="back-home" class="btn subtle" type="button">← Übersicht</button>
+        <div><p class="eyebrow">AKTUELLE ZÄHLUNG</p><h2 id="tool-heading">Pakete zählen</h2></div>
+        <button id="new-item" class="btn subtle" type="button">＋ Neu</button>
+      </div>
+      <div id="save-sheet" class="save-sheet" hidden>
+        <section class="save-dialog" role="dialog" aria-modal="true" aria-labelledby="editor-heading">
+          <div class="section-head"><div><p class="eyebrow">ABSCHLIESSEN</p><h2 id="editor-heading">Zählung speichern</h2></div><button id="save-cancel" class="btn subtle" type="button">× Schließen</button></div>
+          <div class="save-sheet-total"><span>Ermittelte Menge</span><strong id="save-sheet-total">0 Stück</strong></div>
+          <div class="fields two">
+            <label class="field"><span>Artikelbezeichnung <em>*</em></span><input id="article-name" maxlength="100" type="text" placeholder="z. B. Glattkantbrett Fichte" autocomplete="off"></label>
+            <label class="field"><span>Artikelnummer (optional)</span><input id="article-no" maxlength="60" type="text" placeholder="Nummer aus der Warenwirtschaft" autocomplete="off"></label>
+          </div>
+          <label class="field note-field"><span>Bemerkung (optional)</span><input id="article-note" maxlength="160" type="text" placeholder="z. B. Außenlager, Stapel 3" autocomplete="off"></label>
+          <div id="validation-message" class="error-message" role="alert" hidden></div>
+          <button id="confirm-save-item" class="btn primary full prominent space-top" type="button">✓ Zur Ergebnisliste hinzufügen</button>
+        </section>
+      </div>
 
       <section id="panel-package" class="card panel">
         <div class="section-head">
           <div><p class="eyebrow">WERKZEUG 01</p><h2>Paket- & Bundrechner</h2><p class="muted">Ganze Pakete und unterschiedliche Paketgrößen gemeinsam zählen.</p></div>
         </div>
+        <div class="mode-nav" aria-label="Paketmethode">
+          <button class="mode-button is-active" data-package-mode="whole" type="button">Ganze Pakete</button>
+          <button class="mode-button" data-package-mode="open" type="button">Restpakete</button>
+          <button class="mode-button" data-package-mode="presets" type="button">Standardgrößen</button>
+        </div>
+        <div data-package-section="whole">
         <div class="row-label"><span>Anzahl Pakete</span><span>Stück je Paket</span><span></span></div>
         <div id="package-groups" class="group-list"></div>
         <button id="add-package" type="button" class="btn dashed full">＋ Weitere Paketgruppe</button>
         <label class="field single"><span>Lose Bretter / Stück zusätzlich</span><input id="loose-package" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
-        <div class="inline-divider"><span>angebrochene Pakete</span></div>
+        </div>
+        <div data-package-section="open" hidden>
         <div class="subhead"><h3>Restpakete</h3><p>Rest direkt zählen oder entnommene Stücke vom ursprünglichen Paket abziehen.</p></div>
         <div class="fields two">
           <label class="field"><span>Ursprünglich je Paket</span><input id="open-pack-size" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 80"></label>
@@ -90,7 +118,8 @@
           <button id="add-open-pack" class="btn dark" type="button">＋ Restpaket</button>
         </div>
         <div id="open-pack-list" class="chips"></div>
-        <div class="inline-divider"><span>Standard-Paketgrößen</span></div>
+        </div>
+        <div data-package-section="presets" hidden>
         <div class="subhead"><h3>Häufige Paketgrößen</h3><p>Einmal speichern und bei weiteren Zählungen wiederverwenden.</p></div>
         <label class="field"><span>Gespeicherte Größe auswählen</span><select id="preset-select"><option value="">Bitte auswählen</option></select></label>
         <div class="fields two space-top">
@@ -98,17 +127,26 @@
           <label class="field"><span>Stück je Paket</span><input id="preset-size" type="text" inputmode="numeric" placeholder="z. B. 200"></label>
         </div>
         <div class="result-actions"><button id="preset-save" class="btn subtle" type="button">＋ Standardgröße speichern</button><button id="preset-delete" class="btn danger" type="button">Ausgewählte löschen</button></div>
+        </div>
       </section>
 
       <section id="panel-stack" class="card panel" hidden>
         <div class="section-head">
-          <div><p class="eyebrow">WERKZEUG 02</p><h2>Stapelzähler</h2><p class="muted">Für gleichmäßige und unregelmäßige Stapel. Beide Methoden sind kombinierbar.</p></div>
+          <div><p class="eyebrow">WERKZEUG 02</p><h2>Stapelzähler</h2><p class="muted">Wähle eine Methode. Verschiedene Teilbereiche kannst du kombinieren.</p></div>
         </div>
+        <div id="stack-methods" class="mode-nav" aria-label="Stapelzählmethode">
+          <button class="mode-button is-active" data-stack-mode="blocks" type="button">Lagen</button>
+          <button class="mode-button" data-stack-mode="rows" type="button">Reihen</button>
+          <button class="mode-button" data-stack-mode="height" type="button">Stapelhöhe</button>
+          <button class="mode-button" data-stack-mode="photo" type="button">Foto</button>
+        </div>
+        <div data-stack-section="blocks">
         <div class="subhead"><h3>Lagen und Teilblöcke</h3><p>Für einen regelmäßigen Bereich: Bretter je Lage × Anzahl der Lagen.</p></div>
         <div class="row-label"><span>Bretter je Lage</span><span>Anzahl Lagen</span><span></span></div>
         <div id="stack-blocks" class="group-list"></div>
         <button id="add-block" class="btn dashed full" type="button">＋ Weiteren Teilblock hinzufügen</button>
-        <div class="inline-divider"><span>und / oder</span></div>
+        </div>
+        <div data-stack-section="rows" hidden>
         <div class="subhead"><h3>Einzelne, unregelmäßige Reihen</h3><p>Jede Reihe separat zählen. Die eingegebenen Reihen werden addiert.</p></div>
         <div class="row-add">
           <label class="field"><span>Bretter in dieser Reihe</span><input id="row-input" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 13"></label>
@@ -116,8 +154,9 @@
         </div>
         <div id="row-chips" class="chips"></div>
         <label class="field single"><span>Einzelne Bretter zusätzlich</span><input id="loose-stack" inputmode="numeric" type="text" autocomplete="off" placeholder="0"></label>
-        <div class="inline-divider"><span>oder zusätzlich per Stapelhöhe</span></div>
-        <div class="subhead"><h3>Stapelhöhen-Rechner <span class="photo-new">NEU 1.3</span></h3><p>Schätzung aus Stapelhöhe, Brettstärke und Brettern je Lage. Paletten und Unterlagen vorher abziehen.</p></div>
+        </div>
+        <div data-stack-section="height" hidden>
+        <div class="subhead"><h3>Stapelhöhen-Rechner</h3><p>Schätzung aus Stapelhöhe, Brettstärke und Brettern je Lage. Paletten und Unterlagen vorher abziehen.</p></div>
         <div class="fields three">
           <label class="field"><span>Stapelhöhe (mm)</span><input id="height-total" type="text" inputmode="numeric" placeholder="z. B. 1520"></label>
           <label class="field"><span>Brettstärke (mm)</span><input id="height-thickness" type="text" inputmode="numeric" placeholder="z. B. 24"></label>
@@ -131,9 +170,10 @@
         <div id="height-preview" class="estimate-preview" role="status">Maße eingeben, um die ungefähre Stückzahl zu berechnen.</div>
         <button id="add-height-block" class="btn dashed full" type="button">＋ Berechneten Stapel übernehmen</button>
         <div id="height-block-list" class="chips"></div>
-        <div class="inline-divider"><span>oder zusätzlich per Foto</span></div>
+        </div>
+        <div data-stack-section="photo" hidden>
         <div class="photo-tool">
-          <div class="subhead"><h3>Foto-Zählhilfe <span class="photo-new">FARBGRUPPEN 1.3</span></h3><p>Stirnseite fotografieren, farbige Zählbereiche anlegen und jedes sichtbare Brett antippen. Es wird kein Bild hochgeladen.</p></div>
+          <div class="subhead"><h3>Foto-Zählhilfe</h3><p>Stirnseite fotografieren, farbige Zählbereiche anlegen und jedes sichtbare Brett antippen. Es wird kein Bild hochgeladen.</p></div>
           <div class="photo-actions">
             <button id="photo-choose" type="button" class="btn dark">▣ Foto aufnehmen / öffnen</button>
             <button id="photo-clear" type="button" class="btn danger">Foto entfernen</button>
@@ -162,7 +202,10 @@
           </div>
           <button id="photo-download" class="btn subtle full space-top" type="button">↓ Foto mit Markierungen speichern</button>
           <p id="photo-info" class="photo-help" role="status">Tippen setzt einen Punkt. Mit zwei Fingern zoomen, bei Vergrößerung ziehen. Die Fotozählung wird zu anderen Teilzählungen addiert – Bretter nicht doppelt erfassen!</p>
+          <button id="attach-photo-stack" class="btn dark full space-top" type="button" hidden>↗ Fotozählung in den Stapelzähler übernehmen</button>
         </div>
+        </div>
+        <div class="method-notice">Die Gesamtmenge addiert nur die tatsächlich erfassten Teilzählungen. Dieselben Bretter nicht mit zwei Methoden zählen.</div>
       </section>
 
       <section id="panel-length" class="card panel" hidden>
@@ -171,16 +214,14 @@
           <label class="field"><span>Breite (mm, optional)</span><input id="length-width" type="text" inputmode="numeric" placeholder="z. B. 145"></label>
           <label class="field"><span>Stärke (mm, optional)</span><input id="length-thickness" type="text" inputmode="numeric" placeholder="z. B. 28"></label>
         </div>
-        <p class="muted">Die oben eingegebene Artikelnummer gilt für alle Längen. Bei Angabe von Breite und Stärke wird zusätzlich die Fläche bzw. das Volumen berechnet.</p>
+        <p class="muted">Die Artikelnummer kannst du später beim Speichern eingeben. Sie gilt für alle Längen. Jede Länge wird eine eigene Ergebnisposition.</p>
         <div class="row-label"><span>Länge (mm)</span><span>Stück</span><span></span></div>
         <div id="length-rows" class="group-list"></div>
         <button id="add-length" class="btn dashed full" type="button">＋ Weitere Länge</button>
         <div id="length-summary" class="estimate-preview">Noch keine Längen eingetragen.</div>
       </section>
 
-      <section class="card total-card">
-        <div class="total-label"><span>Aktuelle Zählung</span><span id="total-formula" class="muted">Noch keine Mengen eingetragen</span></div>
-        <div class="big-total"><strong id="preview-total">0</strong><span>Stück</span></div>
+      <section class="card metrics-card">
         <details id="conversion" class="conversion">
           <summary>Optional: Laufmeter und Fläche berechnen</summary>
           <p>Nur verwenden, wenn alle gezählten Bretter dieses Artikels dieselben Maße haben.</p>
@@ -190,31 +231,37 @@
           </div>
           <div id="conversion-result" class="conversion-result"></div>
         </details>
-        <div id="validation-message" class="error-message" role="alert" hidden></div>
-        <button id="save-item" class="btn primary full prominent" type="button">✓ Artikel zur Ergebnisliste hinzufügen</button>
-        <button id="go-results" class="btn subtle full" type="button">Ergebnisliste ansehen →</button>
       </section>
+      <section class="count-bar" aria-label="Aktuelle Zählung">
+        <div class="count-values"><span>Aktuelle Zählung</span><strong><span id="preview-total">0</span> <small>Stück</small></strong><span id="total-formula" class="count-parts">Noch keine Mengen eingetragen</span></div>
+        <button id="save-item" class="btn primary prominent" type="button">✓ Speichern</button>
+        <button id="go-results" class="btn subtle count-list" type="button" title="Ergebnisliste">☷</button>
+      </section>
+      <div id="count-error" class="error-message" role="alert" hidden></div>
     </div>
 
     <section id="panel-results" class="results-panel" hidden>
+      <button id="results-home" class="btn subtle back-results" type="button">← Übersicht</button>
       <div class="card">
         <div class="section-head">
-          <div><p class="eyebrow">VARIANTE 2</p><h2>Deine Ergebnisliste</h2><p class="muted">Mehrere Artikel nacheinander zählen und die fertigen Mengen gesammelt auf die Papierliste übertragen.</p></div>
+          <div><p class="eyebrow">GESAMMELTE ZÄHLUNGEN</p><h2>Ergebnisliste</h2><p class="muted">Deine fertigen Zählungen für die Papierinventur.</p></div>
         </div>
         <div class="result-summary">
           <div><strong id="summary-articles">0</strong><span>Positionen gezählt</span></div>
           <div><strong id="summary-counts">0</strong><span>Teilzählungen</span></div>
         </div>
-        <div id="results-empty" class="empty-state">Noch keine Positionen erfasst. Starte mit dem Paket-, Stapel- oder Längenzähler.</div>
+        <label class="field results-filter"><span>Artikel suchen</span><input id="results-search" type="search" placeholder="Name oder Artikelnummer"></label>
+        <div id="results-empty" class="empty-state">Noch keine Positionen erfasst. Starte über die großen Werkzeug-Kacheln.</div>
         <div id="results-list" class="results-list"></div>
         <div class="result-actions">
-          <button id="result-new" type="button" class="btn primary">＋ Weiteren Artikel zählen</button>
+          <button id="result-new" type="button" class="btn primary">＋ Zur Werkzeugauswahl</button>
           <button id="export-csv" type="button" class="btn dark">↓ CSV speichern</button>
           <button id="print-results" type="button" class="btn subtle">▤ Drucken / PDF</button>
         </div>
       </div>
       <div class="card safety-card">
-        <h3>Datensicherung</h3>
+        <details>
+        <summary>Datensicherung und weitere Einstellungen</summary>
         <p>Die Zählungen bleiben auf diesem Gerät gespeichert. Sie werden nicht automatisch zwischen Handy und PC übertragen. Sichere sie bei Bedarf als Datei.</p>
         <div class="result-actions">
           <button id="export-json" class="btn subtle" type="button">↓ Sicherung speichern</button>
@@ -222,14 +269,15 @@
           <input id="import-file" type="file" accept="application/json,.json" hidden>
           <button id="clear-results" class="btn danger" type="button">Liste leeren</button>
         </div>
+        </details>
       </div>
     </section>
 
-    <footer class="footer">HolzOptiX · Inventur-Helfer v1.3.2 · Keine Änderung an eurer Warenwirtschaft</footer>
+    <footer class="footer">HolzOptiX · Inventur-Helfer v1.4 · Keine Änderung an eurer Warenwirtschaft</footer>
   </div>
   <script data-holzoptix-bundle="photo">
 'use strict';
-/* HolzOptiX Inventur 1.3.2: lokale Foto-Zählhilfe mit Farbgruppen, ohne Upload. */
+/* HolzOptiX Inventur 1.4: lokale Foto-Zählhilfe mit Farbgruppen, ohne Upload. */
 window.HolzOptiXPhoto = (() => {
   const DB_NAME = 'holzoptix-inventur-fotos-v1';
   const STORE = 'photos';
@@ -673,13 +721,13 @@ window.HolzOptiXPhoto = (() => {
     setMode('add');updateCount();
     return true;
   }
-  return {version:'1.3.2',init,renderCurrent,draw,removeStored,exportImages,importImages};
+  return {version:'1.4',init,renderCurrent,draw,removeStored,exportImages,importImages};
 })();
   </script>
   <script data-holzoptix-bundle="app">
 'use strict';
 (() => {
-  if (typeof window !== 'undefined') window.HolzOptiXAppVersion = '1.3.2';
+  if (typeof window !== 'undefined') window.HolzOptiXAppVersion = '1.4';
   // Auf Touch-Geräten nur den Seitenzoom sperren. Der Foto-Canvas besitzt
   // eigene Pointer-Gesten zum Vergrößern und Verschieben des Bildes.
   if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) {
@@ -705,8 +753,14 @@ window.HolzOptiXPhoto = (() => {
     photoId:null,photoMarks:[],photoZones:[newZone()],activePhotoZoneId:null,
     lengthRows:[{id:uid(),length:'',count:''}]
   });
-  let state = {version:1, items:[], draft:emptyDraft(),presets:[]};
-  let activeTab = 'package';
+  const toolType = tool => tool==='photo'?'stack':tool;
+  const newDrafts = () => ({package:emptyDraft('package'),stack:emptyDraft('stack'),
+    length:emptyDraft('length'),photo:emptyDraft('stack')});
+  let state = {version:1,items:[],draft:emptyDraft(),drafts:newDrafts(),parkedDrafts:{},presets:[]};
+  let activeTab = 'home';
+  let activeTool = 'package';
+  let packageMode = 'whole';
+  let stackMode = 'blocks';
   let photoReady = false;
   let storageReadError = false;
 
@@ -750,6 +804,7 @@ window.HolzOptiXPhoto = (() => {
       return false;
     }
     try {
+      state.drafts[activeTool]=state.draft;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       storageMessage('Lokal gespeichert');
       return true;
@@ -917,7 +972,7 @@ window.HolzOptiXPhoto = (() => {
     normalizePhoto(d);
     const v = calculate(d, true);
     const item = {
-      id, type:d.type, name, articleNo:String(d.articleNo || '').trim(),note:String(d.note || '').trim(),
+      id, type:d.type, tool:activeTool==='photo'?'photo':d.type, name, articleNo:String(d.articleNo || '').trim(),note:String(d.note || '').trim(),
       length:v.length,width:v.width,total:v.total,parts:v.parts,breakdown:v.breakdown,
       lfm:v.lfm,area:v.area,createdAt,updatedAt:new Date().toISOString(),
       packages:[],openPacks:[],blocks:[],heightBlocks:[],rows:[],loose:null,
@@ -955,7 +1010,7 @@ window.HolzOptiXPhoto = (() => {
     const lfm=total*length/1000;
     const area=width===null?null:lfm*width/1000;
     const volume=area===null||thickness===null?null:area*thickness/1000;
-    return {id:options.id||uid(),groupId:options.groupId||uid(),type:'length',name,articleNo,note,
+    return {id:options.id||uid(),groupId:options.groupId||uid(),type:'length',tool:'length',name,articleNo,note,
       length,width,thickness,total,parts:1,lfm,area,volume,
       breakdown:fmt(length)+' mm: '+total+' Stück',
       createdAt:options.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),
@@ -983,6 +1038,7 @@ window.HolzOptiXPhoto = (() => {
         (item.rows?.length || 0) > 10000 || (item.photoZones?.length||0)>50) throw Error('Zu viele Zählgruppen.');
     const d = fromItem(item);
     const rebuilt = createEntry(d);
+    rebuilt.tool=item.type==='stack'&&item.tool==='photo'?'photo':item.type;
     return rebuilt;
   }
   function validatePresets(input) {
@@ -1004,17 +1060,37 @@ window.HolzOptiXPhoto = (() => {
         throw Error('Unbekanntes oder zu großes Inventur-Speicherformat.');
       if (raw?.version === 1 && Array.isArray(raw.items) && raw.items.length <= 5000) {
         const items = raw.items.map(item => ({...validImportedItem(item),id:String(item.id),createdAt:item.createdAt || new Date().toISOString()}));
-        state = {version:1,items,draft:normalizeDraft(raw.draft||emptyDraft()),
+        const drafts=newDrafts();
+        if(raw.drafts && typeof raw.drafts==='object' && !Array.isArray(raw.drafts)){
+          for(const tool of Object.keys(drafts)){
+            const candidate=normalizeDraft(raw.drafts[tool]);
+            if(candidate.type===toolType(tool))drafts[tool]=candidate;
+          }
+        }else if(raw.draft){
+          // v1.0–v1.3.2: den einzigen bisherigen Entwurf ohne Verlust übernehmen.
+          const old=normalizeDraft(raw.draft);
+          drafts[old.type]=old;
+        }
+        const parkedDrafts={};
+        if(raw.parkedDrafts && typeof raw.parkedDrafts==='object'){
+          for(const tool of Object.keys(drafts)){
+            if(raw.parkedDrafts[tool]?.type===toolType(tool))
+              parkedDrafts[tool]=normalizeDraft(raw.parkedDrafts[tool]);
+          }
+        }
+        state = {version:1,items,draft:drafts.package,drafts,parkedDrafts,
           presets:validatePresets(raw.presets||[])};
       }
     } catch (err) {
-      state = {version:1,items:[],draft:emptyDraft(),presets:[]};
+      state = {version:1,items:[],draft:emptyDraft(),drafts:newDrafts(),parkedDrafts:{},presets:[]};
       // Nicht stillschweigend den alten Datensatz beim Tabwechsel überschreiben.
       storageReadError = true;
       storageMessage('Alte Zählungen geschützt – bitte Sicherung prüfen',true);
       console.error('Inventurdaten konnten nicht eingelesen werden:',err);
     }
-    activeTab = state.draft.type || 'package';
+    activeTab = 'home';
+    activeTool = 'package';
+    state.draft = state.drafts.package;
   }
   function createNumberInput(value, placeholder, kind, id, field) {
     const input = document.createElement('input');
@@ -1170,17 +1246,18 @@ window.HolzOptiXPhoto = (() => {
     $('height-with-spacers').checked=!!d.heightDraft.withSpacers;
     $('height-spacers').value=d.heightDraft.spacers || '';
     $('height-spacer-thickness').value=d.heightDraft.spacerThickness || '';
-    $('editor-heading').textContent=(d.editingId||d.editingGroupId) ? 'Artikel bearbeiten' : 'Neue Zählung';
-    $('save-item').textContent=(d.editingId||d.editingGroupId) ? '✓ Änderungen speichern' : '✓ Artikel zur Ergebnisliste hinzufügen';
+    $('editor-heading').textContent=(d.editingId||d.editingGroupId) ? 'Artikel bearbeiten' : 'Zählung speichern';
+    $('confirm-save-item').textContent=(d.editingId||d.editingGroupId) ? '✓ Änderungen speichern' : '✓ Zur Ergebnisliste hinzufügen';
     renderGroups('package');renderGroups('stack');renderRows();renderPreview();
     renderOpenPacks();renderPresets();renderHeightBlocks();renderHeightPreview();renderLengths();
-    if(photoReady)Promise.resolve(window.HolzOptiXPhoto.renderCurrent()).catch(err=>{
+    if(photoReady && ['stack','photo'].includes(activeTool))Promise.resolve(window.HolzOptiXPhoto.renderCurrent()).catch(err=>{
       $('photo-info').textContent='Foto konnte nicht angezeigt werden: '+err.message;
     });
   }
   function renderPreview() {
     const d=state.draft;
     $('validation-message').hidden=true;
+    $('count-error').hidden=true;
     try{
       const value=calculate(d);
       $('preview-total').textContent=fmt(value.total);
@@ -1195,27 +1272,85 @@ window.HolzOptiXPhoto = (() => {
       $('preview-total').textContent='—';
       $('total-formula').textContent='Eingaben prüfen';
       $('conversion-result').textContent=err.message;
+      $('count-error').textContent=err.message;
+      $('count-error').hidden=false;
       if(d.type==='length')$('length-summary').textContent=err.message;
     }
   }
+  function setPackageMode(mode) {
+    packageMode=mode;
+    document.querySelectorAll('[data-package-mode]').forEach(button=>
+      button.classList.toggle('is-active',button.dataset.packageMode===mode));
+    document.querySelectorAll('[data-package-section]').forEach(section=>
+      section.hidden=section.dataset.packageSection!==mode);
+  }
+  function setStackMode(mode) {
+    stackMode=mode;
+    document.querySelectorAll('[data-stack-mode]').forEach(button=>
+      button.classList.toggle('is-active',button.dataset.stackMode===mode));
+    document.querySelectorAll('[data-stack-section]').forEach(section=>
+      section.hidden=section.dataset.stackSection!==mode);
+    if(mode==='photo'&&photoReady)requestAnimationFrame(()=>window.HolzOptiXPhoto.draw());
+  }
+  function renderHome() {
+    $('home-result-count').textContent=String(state.items.length);
+    document.querySelectorAll('[data-draft-badge]').forEach(badge=>{
+      badge.hidden=!hasDraftContent(state.drafts[badge.dataset.draftBadge]);
+    });
+  }
   function switchTab(tab) {
     activeTab=tab;
-    if(tab!=='results'){state.draft.type=tab;persist();}
+    const isTool=['package','stack','length','photo'].includes(tab);
+    if(isTool){
+      state.drafts[activeTool]=state.draft;
+      activeTool=tab;
+      state.draft=state.drafts[tab];
+      state.draft.type=toolType(tab);
+      if(tab==='photo')stackMode='photo';
+      if(tab==='stack'&&stackMode==='photo')stackMode='blocks';
+      renderEditor();
+      persist();
+    }
     for(const button of document.querySelectorAll('.tab')){
       const chosen=button.dataset.tab===tab;
       button.classList.toggle('is-active',chosen);
       if(chosen)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     }
-    $('editor').hidden=tab==='results';
+    $('home-screen').hidden=tab!=='home';
+    $('editor').hidden=!isTool;
     $('panel-package').hidden=tab!=='package';
-    $('panel-stack').hidden=tab!=='stack';
+    $('panel-stack').hidden=!['stack','photo'].includes(tab);
     $('panel-length').hidden=tab!=='length';
     $('conversion').hidden=tab==='length';
     $('panel-results').hidden=tab!=='results';
-    if(tab==='results')renderResults();else renderPreview();
-    if(tab==='stack' && photoReady)window.HolzOptiXPhoto.draw();
+    if(isTool){
+      $('tool-heading').textContent={package:'Pakete zählen',stack:'Stapel zählen',length:'Holzlängen zählen',photo:'Fotozählung'}[tab];
+      $('stack-methods').hidden=tab==='photo';
+      $('attach-photo-stack').hidden=tab!=='photo';
+      setPackageMode(packageMode);
+      setStackMode(stackMode);
+      renderPreview();
+    }
+    if(tab==='results')renderResults();
+    renderHome();
     window.scrollTo({top:0,behavior:'smooth'});
   }
+  function openSaveSheet() {
+    try{
+      const value=calculate(state.draft,true);
+      if(!value.parts)throw Error('Bitte zuerst eine Menge erfassen.');
+      $('count-error').hidden=true;
+      $('save-sheet-total').textContent=fmt(value.total)+' Stück';
+      $('save-sheet').hidden=false;
+      $('validation-message').hidden=true;
+      $('article-name').focus();
+    }catch(err){
+      $('count-error').textContent=err.message;
+      $('count-error').hidden=false;
+      $('count-error').scrollIntoView?.({block:'nearest'});
+    }
+  }
+  function closeSaveSheet(){$('save-sheet').hidden=true;}
   function hasDraftContent(d) {
     return Boolean(d.editingId||d.editingGroupId || String(d.name||'').trim() || String(d.articleNo||'').trim() ||
       String(d.note||'').trim() || String(d.length||'').trim() || String(d.width||'').trim() ||
@@ -1228,14 +1363,29 @@ window.HolzOptiXPhoto = (() => {
       d.rows.length || d.packages.some(g=>g.packs||g.perPack) || d.blocks.some(g=>g.perLayer||g.layers));
   }
   function cleanupPhoto(id) {
-    if(id && photoReady && state.draft.photoId!==id && !state.items.some(item=>item.photoId===id))
+    if(id && photoReady && !Object.values(state.drafts).some(d=>d.photoId===id) &&
+       !Object.values(state.parkedDrafts).some(d=>d.photoId===id) &&
+       !state.items.some(item=>item.photoId===id))
       window.HolzOptiXPhoto.removeStored(id);
   }
-  function newItem(type=activeTab==='results'?'package':activeTab, confirmDiscard=true) {
+  function newItem(type=activeTool, confirmDiscard=true) {
+    if(type!==activeTool)switchTab(type);
     if(confirmDiscard && hasDraftContent(state.draft) && !confirm('Aktuelle, noch nicht übernommene Eingaben verwerfen und einen neuen Artikel beginnen?'))return;
     const oldPhoto=state.draft.photoId;
-    state.draft=emptyDraft(type);persist();renderEditor();switchTab(type);cleanupPhoto(oldPhoto);
-    $('article-name').focus();
+    state.draft=state.parkedDrafts[activeTool] || emptyDraft(toolType(activeTool));
+    state.drafts[activeTool]=state.draft;
+    delete state.parkedDrafts[activeTool];
+    closeSaveSheet();persist();renderEditor();renderHome();cleanupPhoto(oldPhoto);
+    const field=activeTool==='package'?$('package-groups').querySelector?.('input'):
+      activeTool==='length'?$('length-rows').querySelector?.('input'):$('row-input');
+    field?.focus();
+  }
+  function finishSavedDraft() {
+    const parked=state.parkedDrafts[activeTool];
+    state.draft=parked || emptyDraft(toolType(activeTool));
+    state.drafts[activeTool]=state.draft;
+    delete state.parkedDrafts[activeTool];
+    closeSaveSheet();persist();renderResults();switchTab('results');
   }
   function saveItem() {
     try {
@@ -1264,11 +1414,12 @@ window.HolzOptiXPhoto = (() => {
           state.items.splice(index,0,...entries);
         }else state.items=[...state.items,...entries];
         if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
-        state.draft=emptyDraft('length');persist();renderEditor();renderResults();switchTab('results');
-        return;
+        finishSavedDraft();
+        return true;
       }
       const old=state.items.find(x=>x.id===d.editingId);
       const entry=createEntry(d,old?.id || uid(),old?.createdAt);
+      entry.tool=activeTool;
       if(entry.total===0 && !confirm('Der Artikel hat 0 Stück. Wirklich so in die Ergebnisliste übernehmen?'))return;
       if(d.type==='stack' && entry.photoMarks.length &&
          (entry.blocks.length||entry.heightBlocks.length||entry.rows.length||entry.loose!==null) &&
@@ -1280,8 +1431,8 @@ window.HolzOptiXPhoto = (() => {
       const prior=state.items;
       if(old)state.items=state.items.map(x=>x.id===old.id?entry:x);else state.items=[...state.items,entry];
       if(!persist()){state.items=prior;throw Error('Speicherung fehlgeschlagen. Bitte freien Speicher prüfen.');}
-      state.draft=emptyDraft(d.type);persist();
-      renderEditor();renderResults();switchTab('results');if(old)cleanupPhoto(old.photoId);
+      finishSavedDraft();if(old)cleanupPhoto(old.photoId);
+      return true;
     }catch(err){
       $('validation-message').textContent=err.message;
       $('validation-message').hidden=false;
@@ -1292,16 +1443,22 @@ window.HolzOptiXPhoto = (() => {
     $('result-count').textContent=state.items.length;
     $('summary-articles').textContent=state.items.length;
     $('summary-counts').textContent=fmt(state.items.reduce((n,x)=>n+x.parts,0));
-    $('results-empty').hidden=state.items.length>0;
+    const query=String($('results-search').value||'').toLocaleLowerCase('de-DE').trim();
+    const visible=state.items.map((item,index)=>({item,index})).filter(({item})=>
+      !query || [item.name,item.articleNo,item.note,String(item.length??'')].some(value=>
+        String(value||'').toLocaleLowerCase('de-DE').includes(query)));
+    $('results-empty').hidden=visible.length>0;
+    $('results-empty').textContent=state.items.length?
+      'Keine passenden Artikel gefunden.':'Noch keine Positionen erfasst. Starte über die großen Werkzeug-Kacheln.';
     const container=$('results-list');container.replaceChildren();
-    state.items.forEach((item,index)=>{
+    visible.forEach(({item,index})=>{
       const card=document.createElement('article');card.className='result-card';
       const info=document.createElement('div');
       const title=document.createElement('h3');title.textContent=(index+1)+'. '+item.name+
         (item.type==='length'?' – '+fmt(item.length)+' mm':'');info.append(title);
       const details=document.createElement('p');
       details.textContent=[item.articleNo?'Art.-Nr. '+item.articleNo:null,
-        item.type==='package'?'Paketrechner':item.type==='length'?'Längenzähler':'Stapelzähler',
+        item.type==='package'?'Paketrechner':item.type==='length'?'Längenzähler':item.tool==='photo'?'Fotozähler':'Stapelzähler',
         item.note,item.heightBlocks?.length?'Höhenschätzung enthalten':null].filter(Boolean).join(' · ');
       info.append(details);
       const breakdown=document.createElement('p');breakdown.className='breakdown';breakdown.textContent=item.breakdown || 'Keine Gruppen';
@@ -1317,10 +1474,16 @@ window.HolzOptiXPhoto = (() => {
       const controls=document.createElement('div');controls.className='result-controls';
       const edit=document.createElement('button');edit.className='btn subtle';edit.type='button';edit.textContent='✎ Bearbeiten';
       edit.addEventListener('click',()=>{
-        if(hasDraftContent(state.draft)&&!confirm('Aktuelle Eingaben verwerfen und diesen Artikel bearbeiten?'))return;
-        state.draft=item.type==='length'?fromLengthGroup(state.items.filter(x=>x.type==='length'&&x.groupId===item.groupId)):
+        const tool=item.type==='stack'&&item.tool==='photo'?'photo':item.type;
+        const existing=state.drafts[tool];
+        if((existing.editingId||existing.editingGroupId)&&
+            !confirm('Du bearbeitest hier bereits einen Artikel. Diese Bearbeitung ersetzen?'))return;
+        if(hasDraftContent(existing) && !state.parkedDrafts[tool])state.parkedDrafts[tool]=existing;
+        const draft=item.type==='length'?fromLengthGroup(state.items.filter(x=>x.type==='length'&&x.groupId===item.groupId)):
           fromItem(item);
-        persist();renderEditor();switchTab(item.type);
+        state.drafts[tool]=draft;
+        if(activeTool===tool)state.draft=draft;
+        switchTab(tool);
       });
       const remove=document.createElement('button');remove.className='btn danger';remove.type='button';remove.textContent='× Entfernen';
       remove.addEventListener('click',()=>{
@@ -1347,7 +1510,7 @@ window.HolzOptiXPhoto = (() => {
     if(!state.items.length){alert('Noch keine Ergebnisse vorhanden.');return;}
     const rows=[['Nr.','Artikelnummer','Artikel','Werkzeug','Stück','Länge mm','Breite mm','Laufmeter','Quadratmeter','Berechnung','Bemerkung','Stärke mm','Kubikmeter','Höhenschätzung']];
     state.items.forEach((x,i)=>rows.push([
-      i+1,x.articleNo,x.name,x.type==='package'?'Paket':x.type==='length'?'Längen':'Stapel',x.total,
+      i+1,x.articleNo,x.name,x.type==='package'?'Paket':x.type==='length'?'Längen':x.tool==='photo'?'Foto':'Stapel',x.total,
       x.length??'',x.width??'',x.lfm===null?'':String(Math.round(x.lfm*1000000)/1000000).replace('.',','),x.area===null?'':String(Math.round(x.area*1000000)/1000000).replace('.',','),
       x.breakdown,x.note,x.thickness??'',x.volume==null?'':String(Math.round(x.volume*1000000)/1000000).replace('.',','),
       x.heightBlocks?.length?'Ja – geschätzt':'Nein'
@@ -1399,11 +1562,27 @@ window.HolzOptiXPhoto = (() => {
       renderResults();renderPresets();alert(imports.length+' Positionen und '+incoming.length+' neue Standardgrößen übernommen.');
     }catch(err){alert('Import nicht möglich: '+err.message);}
   }
+  function attachPhotoToStack() {
+    const source=state.drafts.photo,target=state.drafts.stack;
+    if(!source.photoMarks.length)return alert('Bitte zuerst Bretter auf dem Foto markieren.');
+    if(target.photoId || target.photoMarks.length)
+      return alert('Dein Stapelentwurf enthält bereits eine Fotozählung. Bitte diese erst speichern oder entfernen.');
+    if(!confirm(source.photoMarks.length+' Fotomarkierungen zur bestehenden Stapelzählung übernehmen? Die Fotos werden nicht doppelt gezählt.'))return;
+    target.photoId=source.photoId;
+    target.photoMarks=source.photoMarks.map(mark=>({...mark}));
+    target.photoZones=source.photoZones.map(zone=>({...zone}));
+    target.activePhotoZoneId=source.activePhotoZoneId;
+    state.drafts.photo=emptyDraft('stack');
+    state.draft=state.drafts.photo;
+    persist();
+    switchTab('stack');
+    setStackMode('photo');
+  }
   function wire() {
     // Ein fehlendes oder beschädigtes Foto-Modul darf die übrigen Zähler nicht lahmlegen.
     try {
-      if(window.HolzOptiXPhoto?.version !== '1.3.2')
-        throw Error('Die Fotodatei passt nicht zur Version 1.3.2.');
+      if(window.HolzOptiXPhoto?.version !== '1.4')
+        throw Error('Die Fotodatei passt nicht zur Version 1.4.');
       const initialized=window.HolzOptiXPhoto.init({getDraft:()=>state.draft,persist,onCountChange:renderPreview,cleanupPhoto});
       if(initialized===false)throw Error('Dieses Gerät unterstützt den Fotomodus nicht.');
       photoReady = true;
@@ -1413,6 +1592,19 @@ window.HolzOptiXPhoto = (() => {
       console.error('Foto-Modul konnte nicht gestartet werden:',err);
     }
     document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+    document.querySelectorAll('[data-tool]').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tool)));
+    document.querySelectorAll('[data-package-mode]').forEach(btn=>btn.addEventListener('click',()=>setPackageMode(btn.dataset.packageMode)));
+    document.querySelectorAll('[data-stack-mode]').forEach(btn=>btn.addEventListener('click',()=>setStackMode(btn.dataset.stackMode)));
+    $('home-results').addEventListener('click',()=>switchTab('results'));
+    $('back-home').addEventListener('click',()=>switchTab('home'));
+    $('results-home').addEventListener('click',()=>switchTab('home'));
+    $('results-search').addEventListener('input',renderResults);
+    $('attach-photo-stack').addEventListener('click',attachPhotoToStack);
+    $('save-cancel').addEventListener('click',closeSaveSheet);
+    $('confirm-save-item').addEventListener('click',saveItem);
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!$('save-sheet').hidden)closeSaveSheet();
+    });
     for(const [id,key] of [['article-name','name'],['article-no','articleNo'],['article-note','note'],
       ['uniform-length','length'],['uniform-width','width'],['length-width','width'],['length-thickness','thickness'],
       ['loose-package','loosePackage'],['loose-stack','looseStack'],['row-input','rowInput']]){
@@ -1507,10 +1699,10 @@ window.HolzOptiXPhoto = (() => {
     };
     $('add-row').addEventListener('click',addRow);
     $('row-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addRow();}});
-    $('save-item').addEventListener('click',saveItem);
+    $('save-item').addEventListener('click',openSaveSheet);
     $('go-results').addEventListener('click',()=>switchTab('results'));
     $('new-item').addEventListener('click',()=>newItem());
-    $('result-new').addEventListener('click',()=>newItem('package'));
+    $('result-new').addEventListener('click',()=>switchTab('home'));
     $('export-csv').addEventListener('click',exportCsv);
     $('export-json').addEventListener('click',exportJson);
     $('print-results').addEventListener('click',()=>{if(!state.items.length)return alert('Noch keine Ergebnisse vorhanden.');window.print();});
@@ -1524,7 +1716,7 @@ window.HolzOptiXPhoto = (() => {
       state.items=[];persist();renderResults();oldPhotos.forEach(cleanupPhoto);
     });
   }
-  load();wire();renderEditor();renderResults();switchTab(activeTab);
+  load();wire();renderEditor();renderResults();switchTab('home');
   if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}));
   }
@@ -1532,7 +1724,7 @@ window.HolzOptiXPhoto = (() => {
   </script>
   <script>
     window.addEventListener('load', function () {
-      if (window.HolzOptiXAppVersion === '1.3.2' && window.HolzOptiXPhoto?.version === '1.3.2') return;
+      if (window.HolzOptiXAppVersion === '1.4' && window.HolzOptiXPhoto?.version === '1.4') return;
       document.getElementById('build-warning').hidden = false;
       const status = document.getElementById('save-status');
       status.textContent = '⚠ Versionsfehler';
