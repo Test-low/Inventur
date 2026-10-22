@@ -1,4 +1,4 @@
-# HolzOptiX Inventur-Helfer 1.3
+# HolzOptiX Inventur-Helfer 1.3.1
 
 Drei einfache Zählhilfen für die Papierinventur in einer Holzhandlung.
 Keine Warenwirtschaftsanbindung, kein Login, keine externen Bibliotheken.
@@ -31,7 +31,9 @@ Den Link einmal im Browser mit Internet öffnen; danach kann die App bei erfolgr
 
 **Wichtig:** Browserdaten können gelöscht werden. Deshalb regelmäßig unter „Ergebnisliste → Sicherung speichern“ eine JSON-Datei herunterladen. Die JSON-Sicherung lässt sich in eine andere Installation importieren. Die CSV dient zur Übertragung auf eure Papier- oder Excel-Liste.
 
-**Vor dem Update:** In Version 1.2 einmal eine JSON-Sicherung erstellen. Version 1.3 verwendet weiterhin denselben lokalen Datenspeicher und übernimmt frühere Zählungen sowie Markierungen. Die Daten werden nicht automatisch zwischen verschiedenen Handys übertragen.
+**Vor dem Update:** In der bisherigen Version einmal eine JSON-Sicherung erstellen. Version 1.3.1 verwendet weiterhin denselben lokalen Datenspeicher und übernimmt frühere Zählungen sowie Markierungen. Die Daten werden nicht automatisch zwischen verschiedenen Handys übertragen.
+
+**Wichtig beim Hochladen von 1.3.1:** Unbedingt **alle Dateien**, besonders `app.js`, `photo.js`, `index.html`, `style.css` und `sw.js`, aus diesem ZIP ersetzen. Wenn nur die Webseite (`index.html`) ausgetauscht wird, fehlen die neuen Berechnungen. Die Programmdateien tragen nun eine neue Versionskennung in ihren Ladeadressen, damit ein altes Offline-Zwischenspeicherpaket sie nicht versehentlich ersetzt. Nach dem Upload auf dem Handy gegebenenfalls zweimal neu laden. **Nicht die Website-Daten löschen**, sonst würden lokale Zählungen verloren gehen.
 
 ## Foto-Zählhilfe
 
@@ -60,4 +62,4 @@ Dies ist ein **eigenständiges Web-Modul**, kein Austausch der vorhandenen Windo
 - 1.520 mm Stapelhöhe − 4 × 20 mm Zwischenholz = 1.440 mm; geteilt durch 24 mm × 10 je Lage = geschätzt 600 Stück
 - 42 × 3 m + 31 × 4 m + 18 × 5 m = 91 Stück und 340 lfm
 
-Version: 1.3 · 22.10.2026
+Version: 1.3.1 · 22.10.2026
